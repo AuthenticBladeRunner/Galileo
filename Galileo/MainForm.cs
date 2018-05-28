@@ -10,11 +10,16 @@ using System.Windows.Forms;
 
 namespace Galileo
 {
-    public partial class Form1 : Form
+    public partial class frmMain : Form
     {
-        public Form1()
+        public frmMain()
         {
             InitializeComponent();
+        }
+
+        private void btnGoto_Click(object sender, EventArgs e)
+        {
+            webBrs.Navigate(tbUrl.Text);
         }
     }
 }
