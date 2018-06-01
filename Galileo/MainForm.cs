@@ -15,11 +15,19 @@ namespace Galileo
         public frmMain()
         {
             InitializeComponent();
+            //webBrs.Navigate(hupaiUrl);
         }
 
+        private void webBrs_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            textBox1.Text += e.Url.ToString();
+        }
+
+        /*
         private void btnGoto_Click(object sender, EventArgs e)
         {
             webBrs.Navigate(tbUrl.Text);
         }
+        */
     }
 }

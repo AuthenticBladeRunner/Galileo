@@ -29,44 +29,38 @@
         private void InitializeComponent()
         {
             this.webBrs = new System.Windows.Forms.WebBrowser();
-            this.tbUrl = new System.Windows.Forms.TextBox();
-            this.btnGoto = new System.Windows.Forms.Button();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // webBrs
             // 
-            this.webBrs.Location = new System.Drawing.Point(1, 59);
+            this.webBrs.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.webBrs.Location = new System.Drawing.Point(0, 0);
             this.webBrs.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrs.Name = "webBrs";
-            this.webBrs.Size = new System.Drawing.Size(996, 460);
+            this.webBrs.ScrollBarsEnabled = false;
+            this.webBrs.Size = new System.Drawing.Size(996, 710);
             this.webBrs.TabIndex = 0;
-            this.webBrs.Url = new System.Uri("https://www.reddit.com", System.UriKind.Absolute);
+            this.webBrs.Url = new System.Uri("http://test.alltobid.com/moni/gerenlogin.html#", System.UriKind.Absolute);
+            this.webBrs.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webBrs_DocumentCompleted);
             // 
-            // tbUrl
+            // textBox1
             // 
-            this.tbUrl.Location = new System.Drawing.Point(21, 21);
-            this.tbUrl.Name = "tbUrl";
-            this.tbUrl.Size = new System.Drawing.Size(716, 21);
-            this.tbUrl.TabIndex = 1;
-            // 
-            // btnGoto
-            // 
-            this.btnGoto.Location = new System.Drawing.Point(775, 20);
-            this.btnGoto.Name = "btnGoto";
-            this.btnGoto.Size = new System.Drawing.Size(92, 21);
-            this.btnGoto.TabIndex = 2;
-            this.btnGoto.Text = "Go to";
-            this.btnGoto.UseVisualStyleBackColor = true;
-            this.btnGoto.Click += new System.EventHandler(this.btnGoto_Click);
+            this.textBox1.Location = new System.Drawing.Point(1022, 36);
+            this.textBox1.Multiline = true;
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(150, 541);
+            this.textBox1.TabIndex = 1;
             // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1197, 520);
-            this.Controls.Add(this.btnGoto);
-            this.Controls.Add(this.tbUrl);
+            this.ClientSize = new System.Drawing.Size(1184, 712);
+            this.Controls.Add(this.textBox1);
             this.Controls.Add(this.webBrs);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "frmMain";
             this.Text = "Galileo";
             this.ResumeLayout(false);
@@ -77,8 +71,7 @@
         #endregion
 
         private System.Windows.Forms.WebBrowser webBrs;
-        private System.Windows.Forms.TextBox tbUrl;
-        private System.Windows.Forms.Button btnGoto;
+        private System.Windows.Forms.TextBox textBox1;
     }
 }
 
