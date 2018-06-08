@@ -18,13 +18,15 @@ namespace Galileo
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new frmMain());
-            MessageBox.Show("111");
         }
     }
 
     //定义常量
-    public static class ConsTrans
+    public static class global
     {
-        public const string hupaiUrl = "http://moni.51hupai.org/";
+        public const string hupaiUrl = "http://test.alltobid.com/moni/gerenlogin.html";  //国拍模拟拍卖主页
+        public const string layPriceUrl = "http://test.alltobid.com/moni/gerenbid.html"; //国拍模拟出价页面
+        public const int scanInterval = 200;  //扫描间隔时间，单位ms
+
     }
 }
