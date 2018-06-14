@@ -37,10 +37,10 @@
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(1012, 219);
+            this.textBox1.Location = new System.Drawing.Point(1022, 89);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(150, 348);
+            this.textBox1.Size = new System.Drawing.Size(150, 308);
             this.textBox1.TabIndex = 1;
             // 
             // webPanel
@@ -60,7 +60,6 @@
             this.webBrs.ScrollBarsEnabled = false;
             this.webBrs.Size = new System.Drawing.Size(996, 710);
             this.webBrs.TabIndex = 0;
-            this.webBrs.Visible = false;
             this.webBrs.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webBrs_DocumentCompleted);
             // 
             // btnCheckPos

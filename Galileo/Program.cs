@@ -26,7 +26,12 @@ namespace Galileo
     {
         public const string hupaiUrl = "http://test.alltobid.com/moni/gerenlogin.html";  //国拍模拟拍卖主页
         public const string layPriceUrl = "http://test.alltobid.com/moni/gerenbid.html"; //国拍模拟出价页面
-        public const int scanInterval = 200;  //扫描间隔时间，单位ms
+        public const int scanInterval = 200;                                             //扫描间隔时间，单位ms
+        public const string wholeShotImgPath = "img/wholeShotImg.jpg";                   //整屏截图的图像文件
+        public const string timeImgPath = "img/time.png";                                //时间图像文件
+        public const string priceImgPath = "img/price.png";                              //价格图像文件
+        public const string firstBidTick = "14:29:45";                                   //第一次出价时间
+
 
     }
 }
