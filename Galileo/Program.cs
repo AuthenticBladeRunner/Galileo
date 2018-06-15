@@ -30,7 +30,7 @@ namespace Galileo
         public const string wholeShotImgPath = "img/wholeShotImg.jpg";                   //整屏截图的图像文件
         public const string timeImgPath = "img/time.png";                                //时间图像文件
         public const string priceImgPath = "img/price.png";                              //价格图像文件
-        public const string firstBidTick = "14:29:45";                                   //第一次出价时间
+        public const string firstBidTick = "14:57:45";                                   //第一次出价时间
 
 
     }

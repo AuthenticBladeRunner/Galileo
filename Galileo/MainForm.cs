@@ -190,7 +190,7 @@ namespace Galileo
 
                 ////正式情况下用
                 CaptureImg(global.wholeShotImgPath, 176, 359, global.timeImgPath, 58, 13);
-                if (timeNow >= Convert.ToDateTime("14:28:00"))   //11:00至11：30的价格（修改出价时段）
+                if (timeNow >= Convert.ToDateTime("14:56:00"))   //11:00至11：30的价格（修改出价时段）
                 {
                     CaptureImg(global.wholeShotImgPath, 202, 375, global.priceImgPath, 43, 13);
                 }
@@ -322,6 +322,8 @@ namespace Galileo
 
         private void frmMain_Load(object sender, EventArgs e)
         {
+            Console.WriteLine(timeNow);
+            Console.WriteLine(lowerPrice);
             //webBrs.Size = webPanel.Size;
             //this.webPanel.Controls.Add(webBrs);
             //webBrs.ScrollBarsEnabled = false;  // 隐藏滚动条
