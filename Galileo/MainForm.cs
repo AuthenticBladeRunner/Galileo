@@ -34,19 +34,6 @@ namespace Galileo
 
         static extern IntPtr OCRpartBarCodes(string file, int type, int startX, int startY, int width, int height);
 
-
-        //[DllImport("AspriseOCR.dll", EntryPoint = "OCR")]
-        //public static extern IntPtr OCR(string file, int type);
-
-        //[DllImport("AspriseOCR.dll", EntryPoint = "OCRpart")]
-        //static extern IntPtr OCRpart(string file, int type, int startX, int startY, int width, int height);
-
-        //[DllImport("AspriseOCR.dll", EntryPoint = "OCRBarCodes")]
-        //static extern IntPtr OCRBarCodes(string file, int type);
-
-        //[DllImport("AspriseOCR.dll", EntryPoint = "OCRpartBarCodes")]
-        //static extern IntPtr OCRpartBarCodes(string file, int type, int startX, int startY, int width, int height);
-
         private DateTime timeNow=DateTime.Today;       //当前时间
         private int lowerPrice=0;         //最低可成交价
         private Boolean hasFirstBid;    //是否已经第一次出价
@@ -66,21 +53,21 @@ namespace Galileo
         private void webBrs_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
             //　确认网页已经加载完毕
-            while (webBrs.ReadyState != WebBrowserReadyState.Complete)
-            {
-                Application.DoEvents();
-            }
+            //while (webBrs.ReadyState != WebBrowserReadyState.Complete)
+            //{
+            //    Application.DoEvents();
+            //}
 
-            textBox1.Text += e.Url.ToString();
-            if (e.Url.ToString() == global.layPriceUrl)
-            {
-                Thread threadGetData = new Thread(new ThreadStart(ThreadGetData));
-                threadGetData.SetApartmentState(ApartmentState.STA);
-                //调用Start方法执行线程
-                isStartScan = true;
-                threadGetData.Start();
-                //threadGetData.Join();
-            }
+            //textBox1.Text += e.Url.ToString();
+            //if (e.Url.ToString() == global.layPriceUrl)
+            //{
+            //    Thread threadGetData = new Thread(new ThreadStart(ThreadGetData));
+            //    threadGetData.SetApartmentState(ApartmentState.STA);
+            //    //调用Start方法执行线程
+            //    isStartScan = true;
+            //    threadGetData.Start();
+            //    //threadGetData.Join();
+            //}
         }
 
 
@@ -97,10 +84,10 @@ namespace Galileo
             while (isStartScan)
             {
                 Console.WriteLine("开始扫描...");
-                //截图
+                //整个browser截图
                 saveDataShot();
 
-                //识别图片
+                //识别图片信息
                 recogniseImg();
 
                 //执行策略
@@ -112,23 +99,17 @@ namespace Galileo
 
         }
 
-
         [DllImport("User32.dll")]
         private static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
 
-        //声明一个API函数
-        //[System.Runtime.InteropServices.DllImportAttribute("gdi32.dll")]
-        //private static extern bool BitBlt(
-        //     IntPtr hdcDest, // 目标 DC的句柄
-        //     int nXDest,
-        //     int nYDest,
-        //     int nWidth,
-        //     int nHeight,
-        //     IntPtr hdcSrc,  // 源DC的句柄
-        //     int nXSrc,
-        //     int nYSrc,
-        //     System.Int32 dwRop  // 光栅的处理数值
-        //     );
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         //截图
         private void saveDataShot()
@@ -188,16 +169,28 @@ namespace Galileo
 
 
 
-                ////正式情况下用
-                CaptureImg(global.wholeShotImgPath, 176, 359, global.timeImgPath, 58, 13);
-                if (timeNow >= Convert.ToDateTime("14:56:00"))   //11:00至11：30的价格（修改出价时段）
+                //51沪牌模拟
+                CaptureImg(global.wholeShotImgPath, 175, 398, global.timeImgPath, 65, 13);
+                //File.Copy(global.timeImgPath, "img/"+DateTime.Now.Second.ToString() + ".png");
+                if (timeNow >= Convert.ToDateTime("11:00:00"))   //11:00至11：30的价格（修改出价时段）
                 {
-                    CaptureImg(global.wholeShotImgPath, 202, 375, global.priceImgPath, 43, 13);
+                    CaptureImg(global.wholeShotImgPath, 201, 414, global.priceImgPath, 43, 13);
                 }
                 else  //10：30至11：00的价格（首次出价时段）
                 {
                     CaptureImg(global.wholeShotImgPath, 202, 390, global.priceImgPath, 43, 13);
                 }
+
+                ////正式情况下用
+                //CaptureImg(global.wholeShotImgPath, 176, 359, global.timeImgPath, 58, 13);
+                //if (timeNow >= Convert.ToDateTime("14:56:00"))   //11:00至11：30的价格（修改出价时段）
+                //{
+                //    CaptureImg(global.wholeShotImgPath, 202, 375, global.priceImgPath, 43, 13);
+                //}
+                //else  //10：30至11：00的价格（首次出价时段）
+                //{
+                //    CaptureImg(global.wholeShotImgPath, 202, 390, global.priceImgPath, 43, 13);
+                //}
 
 
                 //测试的情况下用
@@ -257,6 +250,9 @@ namespace Galileo
         {
             string result = Marshal.PtrToStringAnsi(OCR(imgPath, -1));
             return result;
+
+            //string result = Marshal.PtrToStringAnsi(OCR(imgPath, -1));
+            //return result;
         }
 
         //tessnet2图像识别暂时不用
@@ -285,8 +281,20 @@ namespace Galileo
         //识别图像
         private void recogniseImg()
         {
-            String time= adjOCR(executeOCR_By_Asprise(global.timeImgPath));
-            String price= adjOCR(executeOCR_By_Asprise(global.priceImgPath));
+            String time = adjOCR(executeOCR_By_Asprise(global.timeImgPath));
+            String price = adjOCR(executeOCR_By_Asprise(global.priceImgPath));
+
+            //部分识别速度是否会快一些
+            //String time = adjOCR(executeOCR_By_Asprise(global.wholeShotImgPath, 175, 398, 65, 13));
+            //String price = "";
+            //if (timeNow >= Convert.ToDateTime("11:00:00"))   //11:00至11：30的价格（修改出价时段)
+            //{
+            //    price = adjOCR(executeOCR_By_Asprise(global.wholeShotImgPath, 201, 414, 43, 13));
+            //}
+            //else //10：30至11：00的价格（首次出价时段）
+            //{
+            //    price = adjOCR(executeOCR_By_Asprise(global.wholeShotImgPath, 202, 390, 43, 13));
+            //}     
 
             DateTime.TryParse(time, out timeNow);
             int.TryParse(price, out lowerPrice);
@@ -302,7 +310,8 @@ namespace Galileo
         //OCR纠错
         private string adjOCR(string text)
         {
-            string result = text.Replace(" ", "");
+
+            string result = text.Replace(" ", "4");
             result = result.Replace("S", "3");
             result = result.Replace("l", "1");
             result = result.Replace("O", "0");
@@ -320,14 +329,44 @@ namespace Galileo
             }
         }
 
+        /*
+         * 模拟鼠标点击
+         * param x:横坐标
+         * param y:纵坐标
+         * 
+         */
+        private void virtlMouClk(int x, int y)
+        {
+            //x = 100; // X coordinate of the click 
+            //y = 80; // Y coordinate of the click 
+            IntPtr handle = webBrs.Handle;
+            StringBuilder className = new StringBuilder(100);
+            while (className.ToString() != "Internet Explorer_Server") // The class control for the browser 
+            {
+                handle = GetWindow(handle, 5); // Get a handle to the child window 
+                GetClassName(handle, className, className.Capacity);
+            }
+
+            IntPtr lParam = (IntPtr)((y << 16) | x); // The coordinates 
+            IntPtr wParam = IntPtr.Zero; // Additional parameters for the click (e.g. Ctrl) 
+            const uint downCode = 0x201; // Left click down code 
+            const uint upCode = 0x202; // Left click up code 
+            SendMessage(handle, downCode, wParam, lParam); // Mouse button down 
+            SendMessage(handle, upCode, wParam, lParam); // Mouse button up 
+        }
+
         private void frmMain_Load(object sender, EventArgs e)
         {
-            Console.WriteLine(timeNow);
-            Console.WriteLine(lowerPrice);
-            //webBrs.Size = webPanel.Size;
-            //this.webPanel.Controls.Add(webBrs);
-            //webBrs.ScrollBarsEnabled = false;  // 隐藏滚动条
+            //Console.WriteLine(timeNow);
+            //Console.WriteLine(lowerPrice);
             webBrs.Navigate(global.hupaiUrl);
+
+            //开启线程
+            Thread threadGetData = new Thread(new ThreadStart(ThreadGetData));
+            threadGetData.SetApartmentState(ApartmentState.STA);
+            //调用Start方法执行线程
+            isStartScan = true;
+            threadGetData.Start();
         }
 
         private void frmMain_FormClosing(object sender, FormClosingEventArgs e)
@@ -342,6 +381,9 @@ namespace Galileo
         private void btnCheckPos_Click(object sender, EventArgs e)
         {
             testFlag = true;
+            
+            virtlMouClk(680, 420);
+            CaptureImg(global.wholeShotImgPath, 680, 420, "img/test.png", 200, 200);
             //this.textBox1.Text=executeOCR_By_Asprise("timetest.png");
             //this.textBox1.Text += "\n";
             //this.textBox1.Text += executeOCR_By_tessnet2("timetest.png");
