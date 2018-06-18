@@ -35,9 +35,10 @@ namespace Galileo
         static extern IntPtr OCRpartBarCodes(string file, int type, int startX, int startY, int width, int height);
 
         private DateTime timeNow=DateTime.Today;       //当前时间
-        private int lowerPrice=0;         //最低可成交价
-        private Boolean hasFirstBid;    //是否已经第一次出价
-        private Boolean testFlag=false;  //测试变量
+        private int lowerPrice=0;                      //最低可成交价
+        private Boolean hasTestBid;                   //是否已经测试打码
+        private Boolean openTestKeyDect=false;               //开启测试打码键盘监测
+        //private Boolean testFlag=false;                //测试变量
 
 
         public frmMain()
@@ -91,7 +92,7 @@ namespace Galileo
                 recogniseImg();
 
                 //执行策略
-                excuteStrategy();
+                //excuteStrategy();
                 //设置扫描时间间隔
                 Thread.Sleep(global.scanInterval);
                 
@@ -322,11 +323,37 @@ namespace Galileo
         //执行策略
         private void excuteStrategy()
         {
-            if(timeNow>=Convert.ToDateTime(global.firstBidTick) && hasFirstBid == false)
+            //打码测试
+            if(timeNow>=Convert.ToDateTime(global.testTypeTick) && hasTestBid == false)
             {
-                MessageBox.Show("第一次出价");
-                hasFirstBid = true;
+                //开启新线程
+                Thread threadGetData = new Thread(new ThreadStart(testType));
+                //调用Start方法执行线程
+                threadGetData.Start();
+
+                hasTestBid = true;
             }
+        }
+
+        //打码测试函数
+        private void testType()
+        {
+            virtlMouClk(680, 420);
+
+            // SendKeys.Send  异步模拟按键(不阻塞UI)
+            //SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
+            //SendKeys.SendWait((lowerPrice + 300).ToString());
+            //Thread.Sleep(300);
+            //SendKeys.Flush();
+            //SendKeys.Flush();
+
+            //按出价
+            //CaptureImg(global.wholeShotImgPath, 845, 420, "img/test.png", 200, 200);
+            //webBrs.Focus();
+            virtlMouClk(845, 420);
+            //virtlMouClk(844, 420);
+
+            openTestKeyDect = true;
         }
 
         /*
@@ -353,6 +380,7 @@ namespace Galileo
             const uint upCode = 0x202; // Left click up code 
             SendMessage(handle, downCode, wParam, lParam); // Mouse button down 
             SendMessage(handle, upCode, wParam, lParam); // Mouse button up 
+            textBox1.Text+="click:"+x+" "+y;
         }
 
         private void frmMain_Load(object sender, EventArgs e)
@@ -380,37 +408,34 @@ namespace Galileo
 
         private void btnCheckPos_Click(object sender, EventArgs e)
         {
-            testFlag = true;
-            
+            //testFlag = true;
             virtlMouClk(680, 420);
-            CaptureImg(global.wholeShotImgPath, 680, 420, "img/test.png", 200, 200);
-            //this.textBox1.Text=executeOCR_By_Asprise("timetest.png");
-            //this.textBox1.Text += "\n";
-            //this.textBox1.Text += executeOCR_By_tessnet2("timetest.png");
+           // SendKeys.Send  异步模拟按键(不阻塞UI)
+           //SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
+            SendKeys.SendWait((lowerPrice+300).ToString());
+            //CaptureImg(global.wholeShotImgPath, 845, 420, "img/test.png", 200, 200);
+            virtlMouClk(845, 420);
+            openTestKeyDect = true;
+            //确定
+            //CaptureImg(global.wholeShotImgPath, 600, 503, "img/test.png", 200, 200);
+            //取消
+            //CaptureImg(global.wholeShotImgPath, 795, 503, "img/test.png", 200, 200);
 
 
-            //Graphics g = this.CreateGraphics();
-            //Pen pen = new Pen(Color.Red, 5);
-            //g.DrawRectangle(pen, new Rectangle(980, 0, 50, 50));
+        }
 
-            //System.Drawing.Pen myPen = new System.Drawing.Pen(System.Drawing.Color.Red);//画笔
-            //System.Drawing.SolidBrush myBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Red);//画刷
-            //System.Drawing.Graphics formGraphics = this.CreateGraphics();
-            //formGraphics.FillEllipse(myBrush, new Rectangle(0, 0, 100, 200));//画实心椭圆
-            //formGraphics.DrawEllipse(myPen, new Rectangle(0, 0, 100, 200));//空心圆
-            //formGraphics.FillRectangle(myBrush, new Rectangle(0, 0, 100, 200));//画实心方
-            //formGraphics.DrawRectangle(myPen, new Rectangle(0, 0, 100, 200));//空心矩形
-            //formGraphics.DrawLine(myPen, 0, 0, 200, 200);//画线
-            //formGraphics.DrawPie(myPen, 90, 80, 140, 40, 120, 100); //画馅饼图形
-            //                                                        //画多边形
-            //formGraphics.DrawPolygon(myPen, new Point[]{ new Point(30,140), new Point(270,250), new Point(110,240), new Point
-            //(200,170), new Point(70,350), new Point(50,200)});
-            ////清理使用的资源
-            //myPen.Dispose();
-            //myBrush.Dispose();
-            //formGraphics.Dispose();
-
-
+        private void webBrs_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (openTestKeyDect == true)
+            {
+                if (e.KeyCode.ToString() == "Return")
+                {
+                    //MessageBox.Show("按了回车");
+                    virtlMouClk(795, 503);
+                    openTestKeyDect = false;
+                }
+            }
+            
         }
     }
 }
