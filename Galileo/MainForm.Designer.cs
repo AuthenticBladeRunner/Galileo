@@ -33,6 +33,7 @@
             this.webBrs = new System.Windows.Forms.WebBrowser();
             this.btnCheckPos = new System.Windows.Forms.Button();
             this.test = new System.Windows.Forms.Button();
+            this.textBox2 = new System.Windows.Forms.TextBox();
             this.webPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -41,7 +42,7 @@
             this.textBox1.Location = new System.Drawing.Point(1022, 129);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(150, 308);
+            this.textBox1.Size = new System.Drawing.Size(150, 54);
             this.textBox1.TabIndex = 1;
             // 
             // webPanel
@@ -84,11 +85,20 @@
             this.test.Text = "test";
             this.test.UseVisualStyleBackColor = true;
             // 
+            // textBox2
+            // 
+            this.textBox2.Location = new System.Drawing.Point(1022, 224);
+            this.textBox2.Multiline = true;
+            this.textBox2.Name = "textBox2";
+            this.textBox2.Size = new System.Drawing.Size(232, 383);
+            this.textBox2.TabIndex = 5;
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1184, 712);
+            this.ClientSize = new System.Drawing.Size(1266, 712);
+            this.Controls.Add(this.textBox2);
             this.Controls.Add(this.test);
             this.Controls.Add(this.btnCheckPos);
             this.Controls.Add(this.webPanel);
@@ -110,6 +120,7 @@
         private System.Windows.Forms.WebBrowser webBrs;
         private System.Windows.Forms.Button btnCheckPos;
         private System.Windows.Forms.Button test;
+        private System.Windows.Forms.TextBox textBox2;
     }
 }
 

@@ -21,6 +21,7 @@ namespace Galileo
         }
     }
 
+
     //定义常量
     public static class global
     {
@@ -31,6 +32,11 @@ namespace Galileo
         public const string wholeShotImgPath = "img/wholeShotImg.jpg";                     //整屏截图的图像文件
         public const string timeImgPath = "img/time.png";                                  //时间图像文件
         public const string priceImgPath = "img/price.png";                                //价格图像文件
-        public const string testTypeTick = "11:29:05";                                     //试打码时间
+        public const string testTypeTick = "11:29:40";                                     //试打码时间
+        public const int testAddPrice = 300;                                               //测试价格在最低价位基础上加价多少
+        public const string layPriceTick = "11:29:50";                                     //正式出价时间
+        public const int AddPrice = 700;                                                   //正式出价在最低价位基础上加价多少
+        public const string setBDPriceTick = "11:29:52";                                   //设定标定价格时间
+        public const int bdAddPrice = 300;                                                 //标定价格在最低价位基础上加价多少
     }
 }

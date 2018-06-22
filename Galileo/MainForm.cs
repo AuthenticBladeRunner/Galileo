@@ -34,11 +34,30 @@ namespace Galileo
 
         static extern IntPtr OCRpartBarCodes(string file, int type, int startX, int startY, int width, int height);
 
-        private DateTime timeNow=DateTime.Today;       //当前时间
-        private int lowerPrice=0;                      //最低可成交价
-        private Boolean hasTestBid;                   //是否已经测试打码
-        private Boolean openTestKeyDect=false;               //开启测试打码键盘监测
+        private SynchronizationContext mainThreadSynContext;
+        private DateTime timeNow = DateTime.Today;       //当前时间
+        private int lowerPrice = 0;                      //最低可成交价
+        private int bdPrice;                             //标定价格
+        private Boolean hasTestBid = false;              //是否已经测试打码
+        private Boolean hasSetBDPrice = false;           //是否已经设定标定价格
+        private Boolean hasLayPrice = false;             //是否已经正式出价
+        private Boolean waitforSendPrice = false;        //
+        private Boolean openTestKeyDect = false;         //开启测试打码键盘监控
+        private Boolean openLayPriceKeyDect = false;     //开启出价打码键盘监控
         //private Boolean testFlag=false;                //测试变量
+
+        private Point layPrcInptBoxCP= new Point(680, 420);        //点击出价输入框
+        private Point layPrcBtnCP = new Point(845, 420);           //点击出价按钮
+        private Point layPrcOkCP = new Point(600, 503);            //点击出价确定
+        private Point layPrcCancelCP = new Point(795, 503);        //点击出价取消
+
+        private Rectangle wholeScreenRect = new Rectangle(175, 398, 65, 13); //整屏区域
+        private Rectangle prcAfter11Rect = new Rectangle(201, 414, 43, 13);  //11:00后价格区域
+        private Rectangle prcBefore11Rect = new Rectangle(202, 390, 43, 13); //10:30-11:00的价格区域
+
+        
+
+
 
 
         public frmMain()
@@ -92,10 +111,10 @@ namespace Galileo
                 recogniseImg();
 
                 //执行策略
-                //excuteStrategy();
+                excuteStrategy();
                 //设置扫描时间间隔
                 Thread.Sleep(global.scanInterval);
-                
+
             }
 
         }
@@ -171,15 +190,15 @@ namespace Galileo
 
 
                 //51沪牌模拟
-                CaptureImg(global.wholeShotImgPath, 175, 398, global.timeImgPath, 65, 13);
+                CaptureImg(global.wholeShotImgPath, global.timeImgPath, wholeScreenRect);
                 //File.Copy(global.timeImgPath, "img/"+DateTime.Now.Second.ToString() + ".png");
                 if (timeNow >= Convert.ToDateTime("11:00:00"))   //11:00至11：30的价格（修改出价时段）
                 {
-                    CaptureImg(global.wholeShotImgPath, 201, 414, global.priceImgPath, 43, 13);
+                    CaptureImg(global.wholeShotImgPath, global.priceImgPath, prcAfter11Rect);
                 }
                 else  //10：30至11：00的价格（首次出价时段）
                 {
-                    CaptureImg(global.wholeShotImgPath, 202, 390, global.priceImgPath, 43, 13);
+                    CaptureImg(global.wholeShotImgPath, global.priceImgPath, prcBefore11Rect);
                 }
 
                 ////正式情况下用
@@ -204,8 +223,6 @@ namespace Galileo
                 //{
                 //    CaptureImg(global.wholeShotImgPath, 202, 390, global.priceImgPath, 43, 13);
                 //}
-
-
             }
             catch (Exception ex)
             {
@@ -224,16 +241,16 @@ namespace Galileo
         /// <param name="width">保存图片的宽度</param>
         /// <param name="height">保存图片的高度</param>
         /// <returns></returns>
-        private void CaptureImg(string fromImagePath, int offsetX, int offsetY, string toImagePath, int width, int height)
+        private void CaptureImg(string fromImagePath, string toImagePath, Rectangle r)
         {
             //原图片文件
             Image fromImage = Image.FromFile(fromImagePath);
             //创建新图位图
-            Bitmap bitmap = new Bitmap(width, height);
+            Bitmap bitmap = new Bitmap(r.Width, r.Height);
             //创建作图区域
             Graphics graphic = Graphics.FromImage(bitmap);
             //截取原图相应区域写入作图区
-            graphic.DrawImage(fromImage, 0, 0, new Rectangle(offsetX, offsetY, width, height), GraphicsUnit.Pixel);
+            graphic.DrawImage(fromImage, 0, 0, r, GraphicsUnit.Pixel);
             //从作图区生成新图
             Image saveImage = Image.FromHbitmap(bitmap.GetHbitmap());
             //保存图片
@@ -324,36 +341,114 @@ namespace Galileo
         private void excuteStrategy()
         {
             //打码测试
-            if(timeNow>=Convert.ToDateTime(global.testTypeTick) && hasTestBid == false)
+            if (timeNow >= Convert.ToDateTime(global.testTypeTick) && hasTestBid == false)
             {
                 //开启新线程
-                Thread threadGetData = new Thread(new ThreadStart(testType));
+                Thread threadGetData = new Thread(new ThreadStart(callGUItoTestType));
                 //调用Start方法执行线程
                 threadGetData.Start();
-
                 hasTestBid = true;
             }
+            //设定标定价格
+            if(timeNow >= Convert.ToDateTime(global.setBDPriceTick) && hasSetBDPrice == false)
+            {
+                bdPrice = lowerPrice+global.bdAddPrice;
+                this.textBox2.Text += timeNow.TimeOfDay.ToString() + " 设标价时的最低价格:" + lowerPrice;
+                textBox2.AppendText("\r\n");
+                hasSetBDPrice = true;
+                this.textBox2.Text += timeNow.TimeOfDay.ToString()+" 标定价格:" +bdPrice;
+                textBox2.AppendText("\r\n");
+            }
+            //正式出价
+            if (timeNow >= Convert.ToDateTime(global.layPriceTick) && hasLayPrice == false)
+            {
+                //开启新线程
+                Thread threadGetData = new Thread(new ThreadStart(callGUItolayPrice));
+                //调用Start方法执行线程
+                threadGetData.Start();
+                hasLayPrice = true;
+                //textBox1.Text += bdPrice;
+            }
+            //发送价格
+            if (lowerPrice >= bdPrice && waitforSendPrice == true)
+            {
+                //开启新线程
+                Thread threadGetData = new Thread(new ThreadStart(callGUItoSendPrice));
+                //调用Start方法执行线程
+                threadGetData.Start();
+                textBox2.Text += timeNow.TimeOfDay.ToString() + " 出价时的最低成交价：" +lowerPrice;
+                textBox2.AppendText("\r\n"); ;
+            }
+
+            
+        }
+
+        private void callGUItoTestType()
+        {
+            mainThreadSynContext.Post(new SendOrPostCallback(testType), null);//通知主线程
+        }
+
+        private void callGUItolayPrice()
+        {
+            mainThreadSynContext.Post(new SendOrPostCallback(layPrice), null);//通知主线程
+        }
+
+        private void callGUItoSendPrice()
+        {
+            mainThreadSynContext.Post(new SendOrPostCallback(sendPrice), null);//通知主线程
         }
 
         //打码测试函数
-        private void testType()
+        private void testType(object state)
         {
-            virtlMouClk(680, 420);
+            //按出价输入框
+            virtlMouClk(layPrcInptBoxCP);
+            /*
+            SendKeys.Send  异步模拟按键(不阻塞UI)
+            SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
+            */
+            SendKeys.SendWait((lowerPrice + global.testAddPrice).ToString());
+            Thread.Sleep(300);
+            SendKeys.Flush();
 
-            // SendKeys.Send  异步模拟按键(不阻塞UI)
-            //SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
-            //SendKeys.SendWait((lowerPrice + 300).ToString());
-            //Thread.Sleep(300);
-            //SendKeys.Flush();
-            //SendKeys.Flush();
+            textBox2.Text += timeNow.TimeOfDay.ToString() + " 测试出价：" + (lowerPrice + global.testAddPrice).ToString();
+            textBox2.AppendText("\r\n"); ;
 
             //按出价
-            //CaptureImg(global.wholeShotImgPath, 845, 420, "img/test.png", 200, 200);
-            //webBrs.Focus();
-            virtlMouClk(845, 420);
-            //virtlMouClk(844, 420);
-
+            virtlMouClk(layPrcBtnCP);
+            //开启键盘监控
             openTestKeyDect = true;
+        }
+
+        //正式出价
+        private void layPrice(object state)
+        {
+            //按出价输入框
+            virtlMouClk(layPrcInptBoxCP);
+            /*
+            SendKeys.Send  异步模拟按键(不阻塞UI)
+            SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
+            */
+            SendKeys.SendWait((lowerPrice + global.AddPrice).ToString());
+            textBox2.Text += timeNow.TimeOfDay.ToString() + " 正式出价时最低价：" + lowerPrice.ToString();
+            this.textBox2.AppendText("\r\n");
+            textBox2.Text += timeNow.TimeOfDay.ToString() + " 正式出价：" + (lowerPrice + global.AddPrice).ToString();
+            this.textBox2.AppendText("\r\n");
+            Thread.Sleep(300);
+            SendKeys.Flush();
+
+            //按出价
+            virtlMouClk(layPrcBtnCP);
+            openTestKeyDect = false;
+            //开启键盘监控
+            openLayPriceKeyDect = true;
+        }
+
+        //发送价格
+        private void sendPrice(object state)
+        {
+            virtlMouClk(layPrcOkCP);
+            waitforSendPrice = false;
         }
 
         /*
@@ -362,7 +457,7 @@ namespace Galileo
          * param y:纵坐标
          * 
          */
-        private void virtlMouClk(int x, int y)
+        private void virtlMouClk(Point point)
         {
             //x = 100; // X coordinate of the click 
             //y = 80; // Y coordinate of the click 
@@ -374,17 +469,18 @@ namespace Galileo
                 GetClassName(handle, className, className.Capacity);
             }
 
-            IntPtr lParam = (IntPtr)((y << 16) | x); // The coordinates 
+            IntPtr lParam = (IntPtr)((point.Y << 16) | point.X); // The coordinates 
             IntPtr wParam = IntPtr.Zero; // Additional parameters for the click (e.g. Ctrl) 
             const uint downCode = 0x201; // Left click down code 
             const uint upCode = 0x202; // Left click up code 
             SendMessage(handle, downCode, wParam, lParam); // Mouse button down 
             SendMessage(handle, upCode, wParam, lParam); // Mouse button up 
-            textBox1.Text+="click:"+x+" "+y;
+            //textBox1.Text+="click:"+x+" "+y;
         }
 
         private void frmMain_Load(object sender, EventArgs e)
         {
+            mainThreadSynContext = SynchronizationContext.Current; //在这里记录主线程的上下文
             //Console.WriteLine(timeNow);
             //Console.WriteLine(lowerPrice);
             webBrs.Navigate(global.hupaiUrl);
@@ -402,24 +498,8 @@ namespace Galileo
             isStartScan = false;
         }
 
-
-        //[DllImport("User32.dll")]
-        //public extern static System.IntPtr GetDC(System.IntPtr hWnd);
-
         private void btnCheckPos_Click(object sender, EventArgs e)
         {
-            //testFlag = true;
-            virtlMouClk(680, 420);
-           // SendKeys.Send  异步模拟按键(不阻塞UI)
-           //SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
-            SendKeys.SendWait((lowerPrice+300).ToString());
-            //CaptureImg(global.wholeShotImgPath, 845, 420, "img/test.png", 200, 200);
-            virtlMouClk(845, 420);
-            openTestKeyDect = true;
-            //确定
-            //CaptureImg(global.wholeShotImgPath, 600, 503, "img/test.png", 200, 200);
-            //取消
-            //CaptureImg(global.wholeShotImgPath, 795, 503, "img/test.png", 200, 200);
 
 
         }
@@ -431,8 +511,20 @@ namespace Galileo
                 if (e.KeyCode.ToString() == "Return")
                 {
                     //MessageBox.Show("按了回车");
-                    virtlMouClk(795, 503);
+                    virtlMouClk(layPrcCancelCP);
+                    SendKeys.SendWait("{BACKSPACE}");
                     openTestKeyDect = false;
+                }
+            }
+
+            if (openLayPriceKeyDect == true)
+            {
+                if (e.KeyCode.ToString() == "Return")
+                {
+                    openLayPriceKeyDect = false;
+                    waitforSendPrice = true;
+                    textBox2.Text+="您已出价，请稍后...";
+                    this.textBox2.AppendText("\r\n");
                 }
             }
             
