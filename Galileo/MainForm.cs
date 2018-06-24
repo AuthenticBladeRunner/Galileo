@@ -53,9 +53,9 @@ namespace Galileo
 
         private Rectangle wholeScreenRect = new Rectangle(175, 398, 65, 13); //整屏区域
         private Rectangle prcAfter11Rect = new Rectangle(201, 414, 43, 13);  //11:00后价格区域
-        private Rectangle prcBefore11Rect = new Rectangle(202, 390, 43, 13); //10:30-11:00的价格区域
+        private Rectangle prcBefore11Rect = new Rectangle(202, 430, 43, 13); //10:30-11:00的价格区域
+        private Rectangle test1 = new Rectangle(202, 430, 43, 13);
 
-        
 
 
 
@@ -328,13 +328,21 @@ namespace Galileo
         //OCR纠错
         private string adjOCR(string text)
         {
-
+            //方案一
             string result = text.Replace(" ", "4");
             result = result.Replace("S", "3");
             result = result.Replace("l", "1");
             result = result.Replace("O", "0");
             result = result.Replace("o", "0");
             return result;
+
+            //方案二
+            //string result = text.Replace(" ", "");
+            //result = result.Replace("S", "3");
+            //result = result.Replace("l", "1");
+            //result = result.Replace("O", "0");
+            //result = result.Replace("o", "0");
+            //return result;
         }
 
         //执行策略
@@ -500,8 +508,7 @@ namespace Galileo
 
         private void btnCheckPos_Click(object sender, EventArgs e)
         {
-
-
+            CaptureImg("7.jpg", "xxx.png", test1);
         }
 
         private void webBrs_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
@@ -528,6 +535,12 @@ namespace Galileo
                 }
             }
             
+        }
+
+        private void webBrs_NewWindow(object sender, CancelEventArgs e)
+        {
+            e.Cancel = true;
+            webBrs.Navigate(webBrs.StatusText);
         }
     }
 }

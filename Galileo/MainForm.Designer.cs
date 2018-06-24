@@ -63,6 +63,7 @@
             this.webBrs.Size = new System.Drawing.Size(996, 710);
             this.webBrs.TabIndex = 0;
             this.webBrs.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webBrs_DocumentCompleted);
+            this.webBrs.NewWindow += new System.ComponentModel.CancelEventHandler(this.webBrs_NewWindow);
             this.webBrs.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.webBrs_PreviewKeyDown);
             // 
             // btnCheckPos
