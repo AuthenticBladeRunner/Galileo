@@ -11,7 +11,8 @@ using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
 using tessnet2;
-
+using System.Net.Sockets;
+using System.Net;
 
 namespace Galileo
 {
@@ -64,6 +65,27 @@ namespace Galileo
         {
             InitializeComponent();
             //webBrs.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(webBrs_DocumentCompleted);
+        }
+
+        private void getCaptainInfo()
+        {
+            var client = new UdpClient();
+            var reqBytes = Encoding.UTF8.GetBytes("Hey Captain");
+            var serverEp = new IPEndPoint(IPAddress.Any, 0);
+
+            client.EnableBroadcast = true;
+            client.Send(reqBytes, reqBytes.Length, new IPEndPoint(IPAddress.Broadcast, 8850));
+
+            Task.Run(() =>
+            {
+                var rspBytes = client.Receive(ref serverEp);
+                var rspStr = Encoding.UTF8.GetString(rspBytes);
+                Console.WriteLine("Received {0} from {1}:{2}", rspStr, serverEp.Address.ToString(), serverEp.Port);
+                client.Close();
+
+                tbCaptain.Text = serverEp.Address.ToString();
+            });
+            
         }
 
         //是否开始图像扫描
@@ -488,6 +510,7 @@ namespace Galileo
 
         private void frmMain_Load(object sender, EventArgs e)
         {
+            getCaptainInfo();
             mainThreadSynContext = SynchronizationContext.Current; //在这里记录主线程的上下文
             //Console.WriteLine(timeNow);
             //Console.WriteLine(lowerPrice);

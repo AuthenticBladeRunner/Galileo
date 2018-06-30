@@ -34,6 +34,7 @@
             this.btnCheckPos = new System.Windows.Forms.Button();
             this.test = new System.Windows.Forms.Button();
             this.textBox2 = new System.Windows.Forms.TextBox();
+            this.tbCaptain = new System.Windows.Forms.TextBox();
             this.webPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -94,11 +95,19 @@
             this.textBox2.Size = new System.Drawing.Size(232, 383);
             this.textBox2.TabIndex = 5;
             // 
+            // tbCaptain
+            // 
+            this.tbCaptain.Location = new System.Drawing.Point(1041, 12);
+            this.tbCaptain.Name = "tbCaptain";
+            this.tbCaptain.Size = new System.Drawing.Size(169, 21);
+            this.tbCaptain.TabIndex = 6;
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1266, 712);
+            this.Controls.Add(this.tbCaptain);
             this.Controls.Add(this.textBox2);
             this.Controls.Add(this.test);
             this.Controls.Add(this.btnCheckPos);
@@ -122,6 +131,7 @@
         private System.Windows.Forms.Button btnCheckPos;
         private System.Windows.Forms.Button test;
         private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.TextBox tbCaptain;
     }
 }
 
