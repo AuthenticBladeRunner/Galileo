@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Galileo", "Galileo\Galileo.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Captain", "Captain\Captain.csproj", "{56B3A38E-18AF-4C5E-B06A-C73C96A72111}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControlLib", "ControlLib\ControlLib.csproj", "{99617879-F60A-40E5-8A18-F09F17076429}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{56B3A38E-18AF-4C5E-B06A-C73C96A72111}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56B3A38E-18AF-4C5E-B06A-C73C96A72111}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56B3A38E-18AF-4C5E-B06A-C73C96A72111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99617879-F60A-40E5-8A18-F09F17076429}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99617879-F60A-40E5-8A18-F09F17076429}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99617879-F60A-40E5-8A18-F09F17076429}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99617879-F60A-40E5-8A18-F09F17076429}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

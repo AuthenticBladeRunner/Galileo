@@ -527,6 +527,7 @@ namespace Galileo
         private void frmMain_FormClosing(object sender, FormClosingEventArgs e)
         {
             isStartScan = false;
+            System.Environment.Exit(0);
         }
 
         private void btnCheckPos_Click(object sender, EventArgs e)
