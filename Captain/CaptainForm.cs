@@ -19,6 +19,17 @@ namespace Captain
 {
     public partial class CaptainForm : Form
     {
+        private const int captainPort = 8850;           // 总控用于接收消息的端口号
+        private const int juniorPort = 8849;            // 下属用于接收消息的端口号
+
+        // 新建UdpClient并绑定端口，用于发送和接收UDP消息
+        private UdpClient udpCli = new UdpClient(captainPort);
+        // 用于给属下广播的地址
+        private IPEndPoint brdcsEp = new IPEndPoint(IPAddress.Broadcast, juniorPort);
+
+        private DateTime fastestTime = DateTime.Today;  // 从下属拿到的最快的时间
+        private int fastestPrice = 0;                   // 从下属拿到的最快的价格
+
         public CaptainForm()
         {
             InitializeComponent();
@@ -74,26 +85,78 @@ namespace Captain
         // https://stackoverflow.com/questions/40616911/c-sharp-udp-broadcast-and-receive-example
         private void listen()
         {
-            int PORT = 8850;
-            UdpClient udpCli = new UdpClient(PORT);
             // udpCli.Client.Bind(new IPEndPoint(IPAddress.Any, PORT));
 
-            var from = new IPEndPoint(IPAddress.Any, 0);
-            var rspData = Encoding.UTF8.GetBytes("Hey Junior");
-            Task.Run(() =>
-            {
-                while (true)
-                {
-                    var recvBuffer = udpCli.Receive(ref from);
-                    var recvString = Encoding.UTF8.GetString(recvBuffer);
-                    Console.WriteLine("Received {0} from {1}:{2}, sending response", recvString, from.Address.ToString(), from.Port);
-                    udpCli.Send(rspData, rspData.Length, from);
-                }
-            });
+            // https://msdn.microsoft.com/en-us/library/system.net.sockets.udpclient.beginreceive(v=vs.110).aspx
+            udpCli.BeginReceive(new AsyncCallback(gotUdpMsg), null);
 
-            
+            //Task.Run( () => {} );
         }
 
+        // UdpClient 接收到消息后的回调函数
+        // https://stackoverflow.com/questions/7266101/receive-messages-continuously-using-udpclient
+        private void gotUdpMsg(IAsyncResult res)
+        {
+            IPEndPoint remoteEp = new IPEndPoint(IPAddress.Any, 0);
+            byte[] msgBin = udpCli.EndReceive(res, ref remoteEp);
+            // 继续接收下一条消息
+            udpCli.BeginReceive(new AsyncCallback(gotUdpMsg), null);
+
+            // 处理接收到的消息
+            string msgStr = Encoding.UTF8.GetString(msgBin);
+            int iSplit = msgStr.IndexOf(':');   // 找到分隔符的位置
+            string msgType, msgCont;            // 消息类型, 消息内容
+            if (iSplit >= 0)
+            {
+                msgType = msgStr.Substring(0, iSplit);
+                msgCont = msgStr.Substring(iSplit + 1).Trim();
+            }
+            else
+            {
+                msgType = msgStr;
+                msgCont = "";
+            }
+            Console.WriteLine("收到 {0}:{1} 发来的类型为「{2}」的消息, 内容为: 「{3}」",
+                remoteEp.Address.ToString(), remoteEp.Port, msgType, msgCont);
+
+            switch (msgType)
+            {
+                case "LookForCaptain":      // 「寻找总控」
+                    // 回复「我是总控」
+                    var rspData = Encoding.UTF8.GetBytes("IAmCaptain");
+                    udpCli.Send(rspData, rspData.Length, remoteEp);
+                    break;
+                case "MyData":              // 属下上报的价格和时间
+                    updTimeAndPrice(msgCont);
+                    break;
+            }
+        }
+
+        private void updTimeAndPrice(string cont)
+        {
+            string[] comp = cont.Split(';');
+            if (comp.Length < 2)
+                return;
+            
+            DateTime jrTime = DateTime.Today;
+            int jrPrice = 0;
+
+            if (DateTime.TryParse(comp[0], out jrTime))
+            {
+                if (jrTime > fastestTime)
+                {
+                    fastestTime = jrTime;   // 是否需要加lock?
+                    if (int.TryParse(comp[1], out jrPrice))
+                    {
+                        fastestPrice = jrPrice;
+                        // 只有当时间和价格都更新时, 才发送最快时间信息
+                        byte[] bin = Encoding.UTF8.GetBytes("FastestData: " + 
+                            fastestTime.ToString("HH:mm:ss") + ";" + fastestPrice);
+                        udpCli.Send(bin, bin.Length, brdcsEp);
+                    }
+                }
+            }
+        }
 
         /// <summary>  
         /// 将excel导入到datatable  

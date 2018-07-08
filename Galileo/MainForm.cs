@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
-using tessnet2;
+using Tesseract;
 using System.Net.Sockets;
 using System.Net;
 
@@ -58,7 +58,12 @@ namespace Galileo
         private Rectangle test1 = new Rectangle(202, 430, 43, 13);
 
 
+        private string captainAddr = null;              // 总控的IP地址
+        private const int captainPort = 8850;           // 总控用于接收消息的端口号
+        private const int juniorPort = 8849;            // 下属用于接收消息的端口号
 
+        // 新建UdpClient并绑定端口，用于发送和接收UDP消息
+        private UdpClient udpCli = new UdpClient(juniorPort);
 
 
         public frmMain()
@@ -67,25 +72,63 @@ namespace Galileo
             //webBrs.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(webBrs_DocumentCompleted);
         }
 
-        private void getCaptainInfo()
+        private void launchInfoExchange()
         {
-            var client = new UdpClient();
-            var reqBytes = Encoding.UTF8.GetBytes("Hey Captain");
+            var reqBytes = Encoding.UTF8.GetBytes("LookForCaptain");   // 寻找总控 的消息
             var serverEp = new IPEndPoint(IPAddress.Any, 0);
 
-            client.EnableBroadcast = true;
-            client.Send(reqBytes, reqBytes.Length, new IPEndPoint(IPAddress.Broadcast, 8850));
+            // 广播这条消息
+            udpCli.EnableBroadcast = true;
+            udpCli.Send(reqBytes, reqBytes.Length, new IPEndPoint(IPAddress.Broadcast, captainPort));
 
-            Task.Run(() =>
-            {
-                var rspBytes = client.Receive(ref serverEp);
-                var rspStr = Encoding.UTF8.GetString(rspBytes);
-                Console.WriteLine("Received {0} from {1}:{2}", rspStr, serverEp.Address.ToString(), serverEp.Port);
-                client.Close();
-
-                tbCaptain.Text = serverEp.Address.ToString();
-            });
+            // 异步接收消息（收到消息后回调函数会被调用）
+            udpCli.BeginReceive(new AsyncCallback(gotUdpMsg), null);
             
+        }
+
+        // UdpClient 接收到消息后的回调函数
+        private void gotUdpMsg(IAsyncResult res)
+        {
+            IPEndPoint remoteEp = new IPEndPoint(IPAddress.Any, 0);
+            byte[] msgBin = udpCli.EndReceive(res, ref remoteEp);
+            // 继续接收下一条消息
+            udpCli.BeginReceive(new AsyncCallback(gotUdpMsg), null);
+
+            // 处理接收到的消息
+            string msgStr = Encoding.UTF8.GetString(msgBin);
+            int iSplit = msgStr.IndexOf(':');   // 找到分隔符的位置
+            string msgType, msgCont;            // 消息类型, 消息内容
+            if (iSplit >= 0)
+            {
+                msgType = msgStr.Substring(0, iSplit);
+                msgCont = msgStr.Substring(iSplit + 1).Trim();
+            }
+            else
+            {
+                msgType = msgStr;
+                msgCont = "";
+            }
+            Console.WriteLine("收到 {0}:{1} 发来的类型为「{2}」的消息, 内容为: 「{3}」", 
+                remoteEp.Address.ToString(), remoteEp.Port, msgType, msgCont);
+
+            switch(msgType)
+            {
+                case "IAmCaptain":          // 「我是总控」
+                    captainAddr = remoteEp.Address.ToString();
+                    tbCaptain.Text = captainAddr;
+                    break;
+                case "FastestData":
+                    // 更新时间和价格
+                    break;
+            }
+        }
+
+        // 向总控上报我的时间和价格
+        private void reportMine(string timeStr, string priceStr)
+        {
+            if (String.IsNullOrEmpty(captainAddr)) return;
+            byte[] bin = Encoding.UTF8.GetBytes("MyData: " + timeStr + ";" + priceStr);
+            udpCli.Send(bin, bin.Length, captainAddr, captainPort);
         }
 
         //是否开始图像扫描
@@ -295,26 +338,26 @@ namespace Galileo
             //return result;
         }
 
-        //tessnet2图像识别暂时不用
-        private string executeOCR_By_tessnet2(String imgPath)
+        // tessnet2图像识别暂时不用
+        // TessNet2 is based on Tesseract v2.04 and has not been updated since September 2009.
+        // Tesseract 3 .NET wrapper is available here: https://github.com/charlesw/tesseract
+        private string executeOCR_By_tesseract(String imgPath)
         {
             try
             {
-                var image = new Bitmap(imgPath);
-                var ocr = new Tesseract();
-                ocr.SetVariable("tessedit_char_whitelist", "0123456789:"); // If digit only
-                //@"C:\OCRTest\tessdata" contains the language package, without this the method crash and app breaks
-                ocr.Init("tessdata", "eng", true);
-                var result = ocr.DoOCR(image, Rectangle.Empty);
-                String res = "";
-                foreach (Word word in result)
-                    res += word.Text;
-                //Console.WriteLine("{0} : {1}", word.Confidence, word.Text);
-                return res;
+                var img = Pix.LoadFromFile(imgPath);
+
+                var engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default);
+                engine.SetVariable("tessedit_char_whitelist", "0123456789:");   // Digits & colons only
+                
+                var page = engine.Process(img);
+                var text = page.GetText();
+                
+                return text;
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
-                return "tessnet2 error";
+                return "Tesseract error: " + e.ToString();
             }
         }
 
@@ -323,6 +366,11 @@ namespace Galileo
         {
             String time = adjOCR(executeOCR_By_Asprise(global.timeImgPath));
             String price = adjOCR(executeOCR_By_Asprise(global.priceImgPath));
+
+            //String time = executeOCR_By_tesseract(global.timeImgPath);
+            //String price = executeOCR_By_tesseract(global.priceImgPath);
+
+            reportMine(time, price);    // 向总控汇报我的时间和价格
 
             //部分识别速度是否会快一些
             //String time = adjOCR(executeOCR_By_Asprise(global.wholeShotImgPath, 175, 398, 65, 13));
@@ -510,7 +558,7 @@ namespace Galileo
 
         private void frmMain_Load(object sender, EventArgs e)
         {
-            getCaptainInfo();
+            launchInfoExchange();
             mainThreadSynContext = SynchronizationContext.Current; //在这里记录主线程的上下文
             //Console.WriteLine(timeNow);
             //Console.WriteLine(lowerPrice);
