@@ -23,7 +23,7 @@ namespace Captain
     //定义常量
     public static class global
     {
-        public const string paramFilePath = @"D:\Visual Studio 2017\workspace\Galileo\Captain\bin\Debug\param\策略组模版.xlsx";       //参数文件路径
+        public const string paramFilePath = "param\\ppConfig.xlsx";       //参数文件路径
 
 
     }
