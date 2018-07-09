@@ -27,7 +27,7 @@ namespace Galileo
         //跳转到主程序
         private void gotoMainFrm()
         {
-            if (verifyUserPwd(tbUserName.Text, tbPassword.Text))
+            if (verifyUserPwd(tbUserName.Text))
             {
                 this.Hide();
                 mainForm.Show();
@@ -39,9 +39,9 @@ namespace Galileo
         }
 
         //验证用户名密码
-        private Boolean verifyUserPwd(String userName, String password)
+        private Boolean verifyUserPwd(String userName)
         {
-            if (userName == "admin" && password == "111111")
+            if (userName == "admin")
             {
                 
                 return true;
@@ -52,18 +52,18 @@ namespace Galileo
             }
         }
 
-        private void tbPassword_KeyDown(object sender, KeyEventArgs e)
+        private void login_Load(object sender, EventArgs e)
+        {
+            mainForm.loginForm = this;
+            this.tbUserName.Focus();
+        }
+
+        private void tbUserName_KeyDown_1(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
                 gotoMainFrm();
             }
-        }
-
-        private void login_Load(object sender, EventArgs e)
-        {
-            this.tbUserName.Focus();
-            mainForm.loginForm = this;
         }
     }
 }
