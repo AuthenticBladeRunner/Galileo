@@ -13,7 +13,7 @@ namespace ControlLib
     {
         private const int WM_PAINT = 0x000F;
 
-        private string backGroundText = "请输入用户名";
+        private string backGroundText = "请输入手机号";
 
         [Description("BackGround Text")]
         public string BackGroundText
@@ -29,11 +29,11 @@ namespace ControlLib
             {
                 using (Graphics g = CreateGraphics())
                 {
-                    if (string.IsNullOrEmpty(Text) && !Focused)
+                    if (string.IsNullOrEmpty(Text))
                     {
                         SizeF size = g.MeasureString(backGroundText, Font);
                         //draw background text   
-                        g.DrawString(backGroundText, Font, Brushes.LightGray, new PointF(0, (Height - size.Height) / 2));
+                        g.DrawString(backGroundText, Font, Brushes.LightGray, new PointF(0, (Height - size.Height-5) / 2));
                     }
                 }
             }
