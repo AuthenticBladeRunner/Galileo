@@ -59,12 +59,13 @@ namespace Galileo
 
 
         private string captainAddr = null;              // 总控的IP地址
-        private const int captainPort = 8850;           // 总控用于接收消息的端口号
-        private const int juniorPort = 8849;            // 下属用于接收消息的端口号
+        private const int captainPort = 8850;           // 总控用于发送/接收消息的端口号
+        private const int juniorPort = 8849;            // 下属用于发送/接收消息的端口号
 
         // 新建UdpClient并绑定端口，用于发送和接收UDP消息
         private UdpClient udpCli = new UdpClient(juniorPort);
 
+        public login loginForm;
 
         public frmMain()
         {
@@ -120,7 +121,19 @@ namespace Galileo
                 case "FastestData":
                     // 更新时间和价格
                     break;
+                case "LoginResult":
+                    break;
             }
+        }
+
+        // 向总控发送登录请求 (发送成功返回true)
+        public bool ReqLogin(string userId)
+        {
+            if (String.IsNullOrEmpty(captainAddr))
+                return false;
+            byte[] bin = Encoding.UTF8.GetBytes("ReqLogin: " + userId);
+            udpCli.Send(bin, bin.Length, captainAddr, captainPort);
+            return true;
         }
 
         // 向总控上报我的时间和价格

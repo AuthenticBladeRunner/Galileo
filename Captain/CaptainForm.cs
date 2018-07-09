@@ -30,6 +30,8 @@ namespace Captain
         private DateTime fastestTime = DateTime.Today;  // 从下属拿到的最快的时间
         private int fastestPrice = 0;                   // 从下属拿到的最快的价格
 
+        private DataTable paramTable = new DataTable();        // 配置表
+
         public CaptainForm()
         {
             InitializeComponent();
@@ -39,7 +41,7 @@ namespace Captain
         {
             if (File.Exists(global.paramFilePath))
             {
-                DataTable paramTable = ExcelToDataTable(global.paramFilePath, true);
+                ExcelToDataTable(global.paramFilePath, true);
                 tbAddTestTimeCol(paramTable, 1, 0.1);     //左右1秒，间隔0.1秒进行测试
                 //MessageBox.Show(temp.Rows[1][1].ToString());
                 ////MessageBox.Show((temp.Rows.Count).ToString());
@@ -126,10 +128,25 @@ namespace Captain
                     var rspData = Encoding.UTF8.GetBytes("IAmCaptain");
                     udpCli.Send(rspData, rspData.Length, remoteEp);
                     break;
+                case "ReqLogin":            // 用户登录请求
+                    userLogin(msgCont, remoteEp);
+                    break;
                 case "MyData":              // 属下上报的价格和时间
                     updTimeAndPrice(msgCont);
                     break;
             }
+        }
+
+        private void userLogin(string userId, IPEndPoint remoteEp)
+        {
+            // https://msdn.microsoft.com/en-us/library/det4aw50(v=vs.110).aspx
+            DataRow[] foundRows = paramTable.Select("手机号 = '" + userId + "'");
+            int res = 0;
+            if (foundRows.Length <= 0)
+                res = -1;
+
+            byte[] bin = Encoding.UTF8.GetBytes("LoginResult: " + res);
+            udpCli.Send(bin, bin.Length, remoteEp);
         }
 
         private void updTimeAndPrice(string cont)
@@ -164,9 +181,8 @@ namespace Captain
         /// <param name="filePath">excel路径</param>  
         /// <param name="isColumnName">第一行是否是列名</param>  
         /// <returns>返回datatable</returns>  
-        public static DataTable ExcelToDataTable(string filePath, bool isColumnName)
+        private void ExcelToDataTable(string filePath, bool isColumnName)
         {
-            DataTable dataTable = null;
             FileStream fs = null;
             DataColumn column = null;
             DataRow dataRow = null;
@@ -189,7 +205,7 @@ namespace Captain
                     if (workbook != null)
                     {
                         sheet = workbook.GetSheetAt(0);//读取第一个sheet，当然也可以循环读取每个sheet  
-                        dataTable = new DataTable();
+                        //configTable = new DataTable();
                         if (sheet != null)
                         {
                             int rowCount = sheet.LastRowNum;//总行数  
@@ -210,7 +226,7 @@ namespace Captain
                                             if (cell.StringCellValue != null)
                                             {
                                                 column = new DataColumn(cell.StringCellValue);
-                                                dataTable.Columns.Add(column);
+                                                paramTable.Columns.Add(column);
                                             }
                                         }
                                     }
@@ -220,7 +236,7 @@ namespace Captain
                                     for (int i = firstRow.FirstCellNum; i < cellCount; ++i)
                                     {
                                         column = new DataColumn("column" + (i + 1));
-                                        dataTable.Columns.Add(column);
+                                        paramTable.Columns.Add(column);
                                     }
                                 }
 
@@ -230,7 +246,7 @@ namespace Captain
                                     row = sheet.GetRow(i);
                                     if (row == null) continue;
 
-                                    dataRow = dataTable.NewRow();
+                                    dataRow = paramTable.NewRow();
                                     for (int j = row.FirstCellNum; j < cellCount; ++j)
                                     {
                                         cell = row.GetCell(j);
@@ -260,13 +276,13 @@ namespace Captain
                                             }
                                         }
                                     }
-                                    dataTable.Rows.Add(dataRow);
+                                    paramTable.Rows.Add(dataRow);
                                 }
                             }
                         }
                     }
                 }
-                return dataTable;
+                //return configTable;
             }
             catch (Exception)
             {
@@ -274,7 +290,7 @@ namespace Captain
                 {
                     fs.Close();
                 }
-                return null;
+                //return null;
             }
         }
 

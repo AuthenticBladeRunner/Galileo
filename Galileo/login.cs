@@ -12,6 +12,8 @@ namespace Galileo
 {
     public partial class login : Form
     {
+        frmMain mainForm = new frmMain();
+
         public login()
         {
             InitializeComponent();
@@ -27,7 +29,6 @@ namespace Galileo
         {
             if (verifyUserPwd(tbUserName.Text, tbPassword.Text))
             {
-                frmMain mainForm = new frmMain();
                 this.Hide();
                 mainForm.Show();
             }
@@ -62,6 +63,7 @@ namespace Galileo
         private void login_Load(object sender, EventArgs e)
         {
             this.tbUserName.Focus();
+            mainForm.loginForm = this;
         }
     }
 }
