@@ -13,12 +13,18 @@ using System.Windows.Forms;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using NPOI.HSSF.UserModel;
-
+using System.Collections;
 
 namespace Captain
 {
     public partial class CaptainForm : Form
     {
+        //测试时间的Tick,已往左偏离1秒方便计算
+        private DateTime[] testTickArr = {DateTime.Parse("11:27:04"), DateTime.Parse("11:28:04"), DateTime.Parse("11:29:04"), DateTime.Parse("11:27:19"), DateTime.Parse("11:27:29"), DateTime.Parse("11:27:39") };
+        private int dev = 1;  //测试左右偏离多少秒
+        private double testTickIntval=0.1;  //间隔多少秒
+        private Queue<DateTime> tickQueue = new Queue<DateTime>();
+        private DateTime testTick;
         private const int captainPort = 8850;           // 总控用于接收消息的端口号
         private const int juniorPort = 8849;            // 下属用于接收消息的端口号
 
@@ -42,7 +48,7 @@ namespace Captain
             if (File.Exists(global.paramFilePath))
             {
                 ExcelToDataTable(global.paramFilePath, true);
-                tbAddTestTimeCol(paramTable, 1, 0.1);     //左右1秒，间隔0.1秒进行测试
+                tbAddTestTimeCol(paramTable, dev, testTickIntval);     //左右1秒，间隔0.1秒进行测试
                 //MessageBox.Show(temp.Rows[1][1].ToString());
                 ////MessageBox.Show((temp.Rows.Count).ToString());
                 //DataRow[] drs3 = paramTable.Select("组号 = 'A1'");
@@ -55,6 +61,11 @@ namespace Captain
                 MessageBox.Show("无法读取参数文件，请联系工作人员");
                 //System.Environment.Exit(0);
             }
+            for(int i = 0; i < testTickArr.Length; i++)
+            {
+                tickQueue.Enqueue(testTickArr[i]);
+            }
+            testTick = tickQueue.Dequeue();
             listen();
         }
 
@@ -66,17 +77,29 @@ namespace Captain
         {
             DataTable newTable = dt;
             int rowNum = dt.Rows.Count;
-            newTable.Columns.Add("测试偏离时间");
-            double tickTime = -1 * dev + interval;
+            newTable.Columns.Add("测试顺序");
+            int seq = 1;
             for (int i = 0; i < rowNum; i++)
             {
-                if (tickTime >= dev)
+                if (seq > (int)(2*dev/interval))
                 {
-                    tickTime = -dev + interval;
+                    seq = 1;
                 }
-                newTable.Rows[i]["测试偏离时间"] = tickTime;
-                tickTime = Math.Round(tickTime + interval, 1);
+                newTable.Rows[i]["测试顺序"] = seq;
+                seq++;
             }
+
+
+            //double tickTime = 0;
+            //for (int i = 0; i < rowNum; i++)
+            //{
+            //    if (tickTime > 2 * dev)
+            //    {
+            //        tickTime = 0;
+            //    }
+            //    newTable.Rows[i]["测试偏离时间"] = tickTime;
+            //    tickTime = Math.Round(tickTime + interval, 1);
+            //}
             DataToExcel(newTable, "temp");
             return newTable;
 
@@ -169,6 +192,23 @@ namespace Captain
                         // 只有当时间和价格都更新时, 才发送最快时间信息
                         byte[] bin = Encoding.UTF8.GetBytes("FastestData: " + 
                             fastestTime.ToString("HH:mm:ss") + ";" + fastestPrice);
+                        udpCli.Send(bin, bin.Length, brdcsEp);
+                    }
+                    //当测试时间到时推送消息
+                    if (fastestTime == testTick)
+                    {
+                        Task.Run(() => {
+                            int sendSeq = 1; //发送的顺序
+                            DataRow[] foundRows = paramTable.Select("测试顺序 = '"+ sendSeq);
+                            if(foundRows.Length > 0){
+                                for(int i = 0; i < foundRows.Length; i++)
+                                {
+
+                                }
+                                foundRows[0]["最迟提交时间"].ToString();
+                            }
+                        });
+                        byte[] bin = Encoding.UTF8.GetBytes("initTest");
                         udpCli.Send(bin, bin.Length, brdcsEp);
                     }
                 }

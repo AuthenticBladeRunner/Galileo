@@ -25,6 +25,5 @@ namespace Captain
     {
         public const string paramFilePath = "param\\ppConfig.xlsx";       //参数文件路径
 
-
     }
 }
