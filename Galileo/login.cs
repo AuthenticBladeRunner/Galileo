@@ -19,50 +19,49 @@ namespace Galileo
             InitializeComponent();
         }
 
-        private void btLogin_Click(object sender, EventArgs e)
-        {
-            gotoMainFrm();
-        }
-
-        //跳转到主程序
-        private void gotoMainFrm()
-        {
-            if (verifyUserPwd(tbUserName.Text))
-            {
-                this.Hide();
-                mainForm.Show();
-            }
-            else
-            {
-                MessageBox.Show("您输入的用户名或密码有误");
-            }
-        }
-
-        //验证用户名密码
-        private Boolean verifyUserPwd(String userName)
-        {
-            if (userName == "admin")
-            {
-                
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         private void login_Load(object sender, EventArgs e)
         {
             mainForm.loginForm = this;
+            mainForm.InitConn();
             this.tbUserName.Focus();
+        }
+        
+        // 发送登录验证请求
+        private void reqLogin()
+        {
+            bool res = mainForm.ReqLogin(tbUserName.Text);     // 发送用户登录请求
+            if (!res)
+                MessageBox.Show("找不到主控服务器！");
+        }
+
+        // 处理主控返回的登录验证结果
+        public void LoginCallback(string loginResult)
+        {
+            if (loginResult == "0")
+            {
+                // The "invoke" call tells the form "Please execute this code in your thread rather than mine."
+                this.Invoke((MethodInvoker)delegate ()
+                {
+                    this.Hide();
+                    mainForm.Show();
+                });
+            }
+            else
+            {
+                MessageBox.Show("用户名不存在！");
+            }
+        }
+
+        private void btLogin_Click(object sender, EventArgs e)
+        {
+            reqLogin();
         }
 
         private void tbUserName_KeyDown_1(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                gotoMainFrm();
+                reqLogin();
             }
         }
     }

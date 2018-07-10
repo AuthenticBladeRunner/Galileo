@@ -73,7 +73,7 @@ namespace Galileo
             //webBrs.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(webBrs_DocumentCompleted);
         }
 
-        private void launchInfoExchange()
+        public void InitConn()
         {
             var reqBytes = Encoding.UTF8.GetBytes("LookForCaptain");   // 寻找总控 的消息
             var serverEp = new IPEndPoint(IPAddress.Any, 0);
@@ -122,6 +122,7 @@ namespace Galileo
                     // 更新时间和价格
                     break;
                 case "LoginResult":
+                    loginForm.LoginCallback(msgCont);
                     break;
             }
         }
@@ -571,7 +572,7 @@ namespace Galileo
 
         private void frmMain_Load(object sender, EventArgs e)
         {
-            launchInfoExchange();
+            InitConn();
             mainThreadSynContext = SynchronizationContext.Current; //在这里记录主线程的上下文
             //Console.WriteLine(timeNow);
             //Console.WriteLine(lowerPrice);
