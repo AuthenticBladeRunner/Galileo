@@ -206,8 +206,12 @@ namespace Captain
                         // 只有当时间和价格都更新时, 才发送最快时间信息
                         byte[] bin = Encoding.UTF8.GetBytes("FastestData: " + 
                             fastestTime.ToString("HH:mm:ss") + ";" + fastestPrice);
-                        udpCli.Send(bin, bin.Length, brdcsEp);
+                        lock (udpCli)
+                        {
+                            udpCli.Send(bin, bin.Length, brdcsEp);
+                        }
                     }
+
                     //当测试时间到时推送消息
                     //MessageBox.Show(fastestTime.ToString() + "  " + testTick.ToString());
                     int id = Array.IndexOf(testTickArr, fastestTime);
@@ -226,19 +230,18 @@ namespace Captain
                                         byte[] binSendTest = Encoding.UTF8.GetBytes("initTest");
                                         if ((foundRows[t]["节点"]).GetType() is IPEndPoint)
                                         {
-                                            udpCli.Send(binSendTest, binSendTest.Length, (IPEndPoint)foundRows[t]["节点"]);
+                                            lock (udpCli)
+                                            {
+                                                udpCli.Send(binSendTest, binSendTest.Length, (IPEndPoint)foundRows[t]["节点"]);
+                                            }
                                         }
                                     }
 
                                 }
                                 Thread.Sleep((int)(testTickIntval*1000));
                             }
-
-
                             
                         });
-                        byte[] bin = Encoding.UTF8.GetBytes("initTest");
-                        udpCli.Send(bin, bin.Length, brdcsEp);
                     }
                 }
             }
