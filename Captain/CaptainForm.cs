@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.IO;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -20,11 +21,9 @@ namespace Captain
     public partial class CaptainForm : Form
     {
         //测试时间的Tick,已往左偏离1秒方便计算
-        private DateTime[] testTickArr = {DateTime.Parse("11:27:04"), DateTime.Parse("11:28:04"), DateTime.Parse("11:29:04"), DateTime.Parse("11:27:19"), DateTime.Parse("11:27:29"), DateTime.Parse("11:27:39") };
+        private DateTime[] testTickArr= { DateTime.Parse("11:27:04"), DateTime.Parse("11:28:04"), DateTime.Parse("11:29:04"), DateTime.Parse("11:29:19"), DateTime.Parse("11:29:29"), DateTime.Parse("11:29:39") };
         private int dev = 1;  //测试左右偏离多少秒
         private double testTickIntval=0.1;  //间隔多少秒
-        private Queue<DateTime> tickQueue = new Queue<DateTime>();
-        private DateTime testTick;
         private const int captainPort = 8850;           // 总控用于接收消息的端口号
         private const int juniorPort = 8849;            // 下属用于接收消息的端口号
 
@@ -61,11 +60,6 @@ namespace Captain
                 MessageBox.Show("无法读取参数文件，请联系工作人员");
                 //System.Environment.Exit(0);
             }
-            for(int i = 0; i < testTickArr.Length; i++)
-            {
-                tickQueue.Enqueue(testTickArr[i]);
-            }
-            testTick = tickQueue.Dequeue();
             listen();
         }
 
@@ -73,16 +67,16 @@ namespace Captain
          * param dev:左右偏离多少秒
          * param interval:间隔多少秒
          */
-        private DataTable tbAddTestTimeCol(DataTable dt, int dev, double interval)
+        private DataTable tbAddTestTimeCol(DataTable dt, int dev, double testTickIntval)
         {
             //DataTable newTable = dt;
             int rowNum = dt.Rows.Count;
-            dt.Columns.Add("节点");
-            dt.Columns.Add("测试顺序");
+            dt.Columns.Add("节点", typeof(IPEndPoint));
+            dt.Columns.Add("测试顺序", typeof(int));
             int seq = 1;
             for (int i = 0; i < rowNum; i++)
             {
-                if (seq > (int)(2 * dev / interval))
+                if (seq > (int)(2 * dev / testTickIntval))
                 {
                     seq = 1;
                 }
@@ -215,18 +209,33 @@ namespace Captain
                         udpCli.Send(bin, bin.Length, brdcsEp);
                     }
                     //当测试时间到时推送消息
-                    if (fastestTime == testTick)
+                    //MessageBox.Show(fastestTime.ToString() + "  " + testTick.ToString());
+                    int id = Array.IndexOf(testTickArr, fastestTime);
+                    if (id!=-1)
                     {
+                        //MessageBox.Show(fastestTime.ToString());
                         Task.Run(() => {
                             int sendSeq = 1; //发送的顺序
-                            DataRow[] foundRows = paramTable.Select("测试顺序 = '"+ sendSeq);
-                            if(foundRows.Length > 0){
-                                for(int i = 0; i < foundRows.Length; i++)
+                            for(int i= sendSeq; i<= 2 * dev / testTickIntval; sendSeq++)
+                            {
+                                DataRow[] foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
+                                if (foundRows.Length > 0)
                                 {
+                                    for (int t = 0; t < foundRows.Length; t++)
+                                    {
+                                        byte[] binSendTest = Encoding.UTF8.GetBytes("initTest");
+                                        if ((foundRows[t]["节点"]).GetType() is IPEndPoint)
+                                        {
+                                            udpCli.Send(binSendTest, binSendTest.Length, (IPEndPoint)foundRows[t]["节点"]);
+                                        }
+                                    }
 
                                 }
-                                foundRows[0]["最迟提交时间"].ToString();
+                                Thread.Sleep((int)(testTickIntval*1000));
                             }
+
+
+                            
                         });
                         byte[] bin = Encoding.UTF8.GetBytes("initTest");
                         udpCli.Send(bin, bin.Length, brdcsEp);

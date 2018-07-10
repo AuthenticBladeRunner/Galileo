@@ -136,6 +136,14 @@ namespace Galileo
                 case "LoginResult":
                     loginForm.LoginCallback(msgCont);
                     break;
+                case "initTest":
+                    //开启新线程
+                    //MessageBox.Show(DateTime.Now.ToString());
+                    Thread threadGetData = new Thread(new ThreadStart(callGUItoTestType));
+                    //调用Start方法执行线程
+                    threadGetData.Start();
+                    hasTestBid = true;
+                    break;
             }
         }
 
@@ -202,7 +210,7 @@ namespace Galileo
                 recogniseImg();
 
                 //执行策略
-                excuteStrategy();
+                //excuteStrategy();
                 //设置扫描时间间隔
                 Thread.Sleep(global.scanInterval);
 
@@ -442,50 +450,48 @@ namespace Galileo
         }
 
         //执行策略
-        private void excuteStrategy()
-        {
-            //打码测试
-            if (timeNow >= Convert.ToDateTime(global.testTypeTick) && hasTestBid == false)
-            {
-                //开启新线程
-                Thread threadGetData = new Thread(new ThreadStart(callGUItoTestType));
-                //调用Start方法执行线程
-                threadGetData.Start();
-                hasTestBid = true;
-            }
-            //设定标定价格
-            if(timeNow >= Convert.ToDateTime(global.setBDPriceTick) && hasSetBDPrice == false)
-            {
-                bdPrice = lowerPrice+global.bdAddPrice;
-                this.textBox2.Text += timeNow.TimeOfDay.ToString() + " 设标价时的最低价格:" + lowerPrice;
-                textBox2.AppendText("\r\n");
-                hasSetBDPrice = true;
-                this.textBox2.Text += timeNow.TimeOfDay.ToString()+" 标定价格:" +bdPrice;
-                textBox2.AppendText("\r\n");
-            }
-            //正式出价
-            if (timeNow >= Convert.ToDateTime(global.layPriceTick) && hasLayPrice == false)
-            {
-                //开启新线程
-                Thread threadGetData = new Thread(new ThreadStart(callGUItolayPrice));
-                //调用Start方法执行线程
-                threadGetData.Start();
-                hasLayPrice = true;
-                //textBox1.Text += bdPrice;
-            }
-            //发送价格
-            if (lowerPrice >= bdPrice && waitforSendPrice == true)
-            {
-                //开启新线程
-                Thread threadGetData = new Thread(new ThreadStart(callGUItoSendPrice));
-                //调用Start方法执行线程
-                threadGetData.Start();
-                textBox2.Text += timeNow.TimeOfDay.ToString() + " 出价时的最低成交价：" +lowerPrice;
-                textBox2.AppendText("\r\n"); ;
-            }
-
-            
-        }
+        //private void excuteStrategy()
+        //{
+        //    //打码测试
+        //    if (timeNow >= Convert.ToDateTime(global.testTypeTick) && hasTestBid == false)
+        //    {
+        //        //开启新线程
+        //        Thread threadGetData = new Thread(new ThreadStart(callGUItoTestType));
+        //        //调用Start方法执行线程
+        //        threadGetData.Start();
+        //        hasTestBid = true;
+        //    }
+        //    //设定标定价格
+        //    if(timeNow >= Convert.ToDateTime(global.setBDPriceTick) && hasSetBDPrice == false)
+        //    {
+        //        bdPrice = lowerPrice+global.bdAddPrice;
+        //        this.textBox2.Text += timeNow.TimeOfDay.ToString() + " 设标价时的最低价格:" + lowerPrice;
+        //        textBox2.AppendText("\r\n");
+        //        hasSetBDPrice = true;
+        //        this.textBox2.Text += timeNow.TimeOfDay.ToString()+" 标定价格:" +bdPrice;
+        //        textBox2.AppendText("\r\n");
+        //    }
+        //    //正式出价
+        //    if (timeNow >= Convert.ToDateTime(global.layPriceTick) && hasLayPrice == false)
+        //    {
+        //        //开启新线程
+        //        Thread threadGetData = new Thread(new ThreadStart(callGUItolayPrice));
+        //        //调用Start方法执行线程
+        //        threadGetData.Start();
+        //        hasLayPrice = true;
+        //        //textBox1.Text += bdPrice;
+        //    }
+        //    //发送价格
+        //    if (lowerPrice >= bdPrice && waitforSendPrice == true)
+        //    {
+        //        //开启新线程
+        //        Thread threadGetData = new Thread(new ThreadStart(callGUItoSendPrice));
+        //        //调用Start方法执行线程
+        //        threadGetData.Start();
+        //        textBox2.Text += timeNow.TimeOfDay.ToString() + " 出价时的最低成交价：" +lowerPrice;
+        //        textBox2.AppendText("\r\n"); ;
+        //    }           
+        //}
 
         private void callGUItoTestType()
         {
