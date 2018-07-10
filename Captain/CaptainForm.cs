@@ -75,9 +75,10 @@ namespace Captain
          */
         private DataTable tbAddTestTimeCol(DataTable dt, int dev, double interval)
         {
-            DataTable newTable = dt;
+            //DataTable newTable = dt;
             int rowNum = dt.Rows.Count;
-            newTable.Columns.Add("测试顺序");
+            dt.Columns.Add("节点");
+            dt.Columns.Add("测试顺序");
             int seq = 1;
             for (int i = 0; i < rowNum; i++)
             {
@@ -85,7 +86,7 @@ namespace Captain
                 {
                     seq = 1;
                 }
-                newTable.Rows[i]["测试顺序"] = seq;
+                dt.Rows[i]["测试顺序"] = seq;
                 seq++;
             }
 
@@ -100,8 +101,8 @@ namespace Captain
             //    newTable.Rows[i]["测试偏离时间"] = tickTime;
             //    tickTime = Math.Round(tickTime + interval, 1);
             //}
-            DataToExcel(newTable, "temp");
-            return newTable;
+            DataToExcel(dt, "temp");
+            return dt;
 
         }
 
