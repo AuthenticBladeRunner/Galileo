@@ -64,9 +64,9 @@ namespace Captain
          */
         private DataTable tbAddTestTimeCol(DataTable dt, int dev, double interval)
         {
-            DataTable newTable = dt;
             int rowNum = dt.Rows.Count;
-            newTable.Columns.Add("测试偏离时间");
+            dt.Columns.Add("测试偏离时间");
+            dt.Columns.Add("节点");
             double tickTime = -1 * dev + interval;
             for (int i = 0; i < rowNum; i++)
             {
@@ -74,12 +74,11 @@ namespace Captain
                 {
                     tickTime = -dev + interval;
                 }
-                newTable.Rows[i]["测试偏离时间"] = tickTime;
+                dt.Rows[i]["测试偏离时间"] = tickTime;
                 tickTime = Math.Round(tickTime + interval, 1);
             }
-            DataToExcel(newTable, "temp");
-            return newTable;
-
+            DataToExcel(dt, "temp");
+            return dt;
         }
 
         // https://stackoverflow.com/questions/9612389/how-to-scan-for-a-port-waiting-for-a-connection-on-a-network
@@ -100,9 +99,21 @@ namespace Captain
         private void gotUdpMsg(IAsyncResult res)
         {
             IPEndPoint remoteEp = new IPEndPoint(IPAddress.Any, 0);
-            byte[] msgBin = udpCli.EndReceive(res, ref remoteEp);
+            byte[] msgBin = { };
+            try
+            {
+                msgBin = udpCli.EndReceive(res, ref remoteEp);
+            }
+            catch (Exception e)         // 如果远程主机关闭, 会产生 System.Net.Sockets.SocketException: 远程主机强迫关闭了一个现有的连接
+            {
+                Console.WriteLine(e);
+            }
+
             // 继续接收下一条消息
             udpCli.BeginReceive(new AsyncCallback(gotUdpMsg), null);
+
+            if (msgBin.Length <= 0)
+                return;
 
             // 处理接收到的消息
             string msgStr = Encoding.UTF8.GetString(msgBin);
@@ -142,8 +153,15 @@ namespace Captain
             // https://msdn.microsoft.com/en-us/library/det4aw50(v=vs.110).aspx
             DataRow[] foundRows = paramTable.Select("手机号 = '" + userId + "'");
             int res = 0;
-            if (foundRows.Length <= 0)
+            if (foundRows.Length > 0)
+            {
+                foundRows[0]["登陆"] = "是";
+                foundRows[0]["节点"] = remoteEp;
+            }
+            else
+            {
                 res = -1;
+            }
 
             byte[] bin = Encoding.UTF8.GetBytes("LoginResult: " + res);
             udpCli.Send(bin, bin.Length, remoteEp);

@@ -91,9 +91,21 @@ namespace Galileo
         private void gotUdpMsg(IAsyncResult res)
         {
             IPEndPoint remoteEp = new IPEndPoint(IPAddress.Any, 0);
-            byte[] msgBin = udpCli.EndReceive(res, ref remoteEp);
+            byte[] msgBin = { };
+            try
+            {
+                msgBin = udpCli.EndReceive(res, ref remoteEp);
+            }
+            catch (Exception e)         // 如果远程主机关闭, 会产生 System.Net.Sockets.SocketException: 远程主机强迫关闭了一个现有的连接
+            {
+                Console.WriteLine(e);
+            }
+
             // 继续接收下一条消息
             udpCli.BeginReceive(new AsyncCallback(gotUdpMsg), null);
+
+            if (msgBin.Length <= 0)
+                return;
 
             // 处理接收到的消息
             string msgStr = Encoding.UTF8.GetString(msgBin);
