@@ -206,44 +206,70 @@ namespace Captain
                         // 只有当时间和价格都更新时, 才发送最快时间信息
                         byte[] bin = Encoding.UTF8.GetBytes("FastestData: " + 
                             fastestTime.ToString("HH:mm:ss") + ";" + fastestPrice);
-                        lock (udpCli)
-                        {
-                            udpCli.Send(bin, bin.Length, brdcsEp);
-                        }
+                        udpCli.Send(bin, bin.Length, brdcsEp);
                     }
-
                     //当测试时间到时推送消息
                     //MessageBox.Show(fastestTime.ToString() + "  " + testTick.ToString());
                     int id = Array.IndexOf(testTickArr, fastestTime);
                     if (id!=-1)
                     {
                         //MessageBox.Show(fastestTime.ToString());
-                        Task.Run(() => {
-                            int sendSeq = 1; //发送的顺序
-                            for(int i= sendSeq; i<= 2 * dev / testTickIntval; sendSeq++)
-                            {
-                                DataRow[] foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
-                                if (foundRows.Length > 0)
-                                {
-                                    for (int t = 0; t < foundRows.Length; t++)
-                                    {
-                                        byte[] binSendTest = Encoding.UTF8.GetBytes("initTest");
-                                        if ((foundRows[t]["节点"]).GetType() is IPEndPoint)
-                                        {
-                                            lock (udpCli)
-                                            {
-                                                udpCli.Send(binSendTest, binSendTest.Length, (IPEndPoint)foundRows[t]["节点"]);
-                                            }
-                                        }
-                                    }
+                        //new Task(sendTestInstr).Start();
+                        Thread threadSendTestInstr = new Thread(new ThreadStart(sendTestInstr));
+                        //调用Start方法执行线程
+                        threadSendTestInstr.Start();
 
-                                }
-                                Thread.Sleep((int)(testTickIntval*1000));
-                            }
-                            
-                        });
+                        //Task.Run(() => {
+                        //    int sendSeq = 1; //发送的顺序
+                        //    for(int i= sendSeq; i<= 2 * dev / testTickIntval; sendSeq++)
+                        //    {
+                        //        DataRow[] foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
+                        //        if (foundRows.Length > 0)
+                        //        {
+                        //            for (int t = 0; t < foundRows.Length; t++)
+                        //            {
+                        //                byte[] binSendTest = Encoding.UTF8.GetBytes("initTest");
+                        //                if ((foundRows[t]["节点"]).GetType() is IPEndPoint)
+                        //                {
+                        //                    udpCli.Send(binSendTest, binSendTest.Length, (IPEndPoint)foundRows[t]["节点"]);
+                        //                    MessageBox.Show("111");
+                        //                }
+                        //            }
+
+                        //        }
+                        //        Thread.Sleep((int)(testTickIntval*50000));
+                        //    }
+
+
+
+                        //});
+                        //byte[] bin = Encoding.UTF8.GetBytes("initTest");
+                        //udpCli.Send(bin, bin.Length, brdcsEp);
                     }
                 }
+            }
+        }
+
+        private void sendTestInstr()
+        {
+            int sendSeq = 1; //发送的顺序
+            for (int i = sendSeq; i <= 2 * dev / testTickIntval; sendSeq++)
+            {
+                System.Console.WriteLine("111111");
+                DataRow[] foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
+                if (foundRows.Length > 0)
+                {
+                    for (int t = 0; t < foundRows.Length; t++)
+                    {
+                        byte[] binSendTest = Encoding.UTF8.GetBytes("initTest");
+                        if ((foundRows[t]["节点"]).GetType() is IPEndPoint)
+                        {
+                            udpCli.Send(binSendTest, binSendTest.Length, (IPEndPoint)foundRows[t]["节点"]);
+                        }
+                    }
+
+                }
+                Thread.Sleep((int)(testTickIntval * 1000));
             }
         }
 
