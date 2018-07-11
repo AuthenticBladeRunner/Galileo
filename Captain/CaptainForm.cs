@@ -258,14 +258,14 @@ namespace Captain
             int sendSeq = 1; //发送的顺序
             for (int i = sendSeq; i <= 2 * dev / testTickIntval; sendSeq++)
             {
-                System.Console.WriteLine("111111");
                 DataRow[] foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
                 if (foundRows.Length > 0)
                 {
                     for (int t = 0; t < foundRows.Length; t++)
                     {
                         byte[] binSendTest = Encoding.UTF8.GetBytes("initTest");
-                        if ((foundRows[t]["节点"]).GetType() is IPEndPoint)
+                        DataToExcel(paramTable, "temp2");
+                        if (!foundRows[t].IsNull("节点"))
                         {
                             lock (udpCli)
                             {
