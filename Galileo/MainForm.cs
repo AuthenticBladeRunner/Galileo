@@ -202,7 +202,7 @@ namespace Galileo
             Control.CheckForIllegalCrossThreadCalls = false;
             while (isStartScan)
             {
-                Console.WriteLine("开始扫描...");
+                //Console.WriteLine("开始扫描...");
                 //整个browser截图
                 saveDataShot();
 
