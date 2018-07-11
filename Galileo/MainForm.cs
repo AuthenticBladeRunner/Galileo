@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using Tesseract;
 using System.Net.Sockets;
 using System.Net;
+using Newtonsoft.Json;
 
 namespace Galileo
 {
@@ -64,6 +65,8 @@ namespace Galileo
 
         // 新建UdpClient并绑定端口，用于发送和接收UDP消息
         private UdpClient udpCli = new UdpClient(juniorPort);
+
+        private Dictionary<string, object> myParam = null;      // 参数配置
 
         public login loginForm;
 
@@ -130,11 +133,14 @@ namespace Galileo
                     captainAddr = remoteEp.Address.ToString();
                     tbCaptain.Text = captainAddr;
                     break;
-                case "FastestData":
-                    // 更新时间和价格
+                case "MyParam":
+                    myParam = JsonConvert.DeserializeObject<Dictionary<string, object>>(msgCont);
                     break;
                 case "LoginResult":
                     loginForm.LoginCallback(msgCont);
+                    break;
+                case "FastestData":
+                    // 更新时间和价格
                     break;
                 case "initTest":
                     //开启新线程

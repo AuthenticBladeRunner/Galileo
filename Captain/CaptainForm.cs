@@ -175,14 +175,17 @@ namespace Captain
             int res = 0;
             if (foundRows.Length > 0)
             {
+                DataRow row = foundRows[0];
                 // https://www.newtonsoft.com/json/help/html/SerializeDictionary.htm
-                // 转换为JSON需要在给「节点」赋值前进行, 因为json.net无法把IPEndPoint转为字符串
-                string json = JsonConvert.SerializeObject(foundRows[0]);
+                // 需要先把DataRow转为Dictionary, 因为对于普通Object, JsonConvert仅转换其property
+                // 另外, 转换为JSON需要在给「节点」赋值前进行, 因为json.net无法把IPEndPoint转为字符串
+                var rowDict = row.Table.Columns.Cast<DataColumn>().ToDictionary(col => col.ColumnName, col => row[col.ColumnName]);
+                string json = JsonConvert.SerializeObject(rowDict);
                 byte[] jsBin = Encoding.UTF8.GetBytes("MyParam: " + json);
                 udpCli.Send(jsBin, jsBin.Length, remoteEp);
 
-                foundRows[0]["登陆"] = "是";
-                foundRows[0]["节点"] = remoteEp;
+                row["登陆"] = "是";
+                row["节点"] = remoteEp;
             }
             else
             {
