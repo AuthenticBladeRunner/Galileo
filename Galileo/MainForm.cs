@@ -63,6 +63,8 @@ namespace Galileo
         private const int captainPort = 8850;           // 总控用于发送/接收消息的端口号
         private const int juniorPort = 8849;            // 下属用于发送/接收消息的端口号
 
+
+
         // 新建UdpClient并绑定端口，用于发送和接收UDP消息
         private UdpClient udpCli = new UdpClient(juniorPort);
 
@@ -135,12 +137,14 @@ namespace Galileo
                     break;
                 case "MyParam":
                     myParam = JsonConvert.DeserializeObject<Dictionary<string, object>>(msgCont);
+
                     break;
                 case "LoginResult":
                     loginForm.LoginCallback(msgCont);
                     break;
                 case "FastestData":
                     // 更新时间和价格
+                    exTimeMinitor(msgCont);
                     break;
                 case "initTest":
                     //开启新线程
@@ -455,6 +459,19 @@ namespace Galileo
             //return result;
         }
 
+        //时间监控，到时间执行策略
+        private void exTimeMinitor(String msgCont)
+        {
+            DateTime CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
+            int CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
+            //System.Console.WriteLine(myParam["伏击时间"].ToString().Substring(0, 8));
+            if (CapTime == DateTime.Parse(myParam["伏击时间"].ToString().Substring(0, 8)))
+            {
+                System.Console.WriteLine("出价");
+                System.Console.WriteLine(CapPrice);
+            }
+        }
+
         //执行策略
         //private void excuteStrategy()
         //{
@@ -569,9 +586,7 @@ namespace Galileo
 
         /*
          * 模拟鼠标点击
-         * param x:横坐标
-         * param y:纵坐标
-         * 
+         * Point:点击坐标
          */
         private void virtlMouClk(Point point)
         {

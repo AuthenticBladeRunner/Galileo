@@ -457,5 +457,9 @@ namespace Captain
             return FileName;        //返回生成文件的绝对路径
         }
 
+        private void CaptainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            System.Environment.Exit(0);
+        }
     }
 }
