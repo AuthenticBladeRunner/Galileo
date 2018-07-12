@@ -74,7 +74,7 @@ namespace Captain
             //DataTable newTable = dt;
             int rowNum = dt.Rows.Count;
             dt.Columns.Add("节点", typeof(IPEndPoint));
-            dt.Columns.Add("测试顺序", typeof(int));
+            dt.Columns.Add("测试顺序", typeof(int)); 
             int seq = 1;
             for (int i = 0; i < rowNum; i++)
             {
@@ -289,7 +289,7 @@ namespace Captain
                     for (int t = 0; t < foundRows.Length; t++)
                     {
                         byte[] binSendTest = Encoding.UTF8.GetBytes("initTest");
-                        DataToExcel(paramTable, "temp2");
+                        //DataToExcel(paramTable, "temp2");
                         if (!foundRows[t].IsNull("节点"))
                         {
                             lock (udpCli)
@@ -472,5 +472,9 @@ namespace Captain
             return FileName;        //返回生成文件的绝对路径
         }
 
+        private void CaptainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            System.Environment.Exit(0);
+        }
     }
 }

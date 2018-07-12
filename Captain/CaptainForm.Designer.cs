@@ -52,6 +52,7 @@
             this.Controls.Add(this.dgvMain);
             this.Name = "CaptainForm";
             this.Text = "伽利略队长";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.CaptainForm_FormClosing);
             this.Load += new System.EventHandler(this.CaptainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dgvMain)).EndInit();
             this.ResumeLayout(false);

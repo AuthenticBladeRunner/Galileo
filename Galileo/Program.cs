@@ -38,7 +38,7 @@ namespace Galileo
         public const int testAddPrice = 300;                                                         //测试价格在最低价位基础上加价多少
         //public const string layPriceTick = "11:29:50";                                               //正式出价时间
         public const int AddPrice = 700;                                                             //正式出价在最低价位基础上加价多少
-        //public const string setBDPriceTick = "11:29:52";                                             //设定标定价格时间
-        //public const int bdAddPrice = 300;                                                           //标定价格在最低价位基础上加价多少
+        public const string setBDPriceTick = "11:29:52";                                             //设定标定价格时间
+        public const int bdAddPrice = 300;                                                           //标定价格在最低价位基础上加价多少
     }
 }
