@@ -23,6 +23,7 @@ namespace Captain
     {
         //测试时间的Tick,已往左偏离1秒方便计算
         private DateTime[] testTickArr= { DateTime.Parse("11:27:04"), DateTime.Parse("11:28:04"), DateTime.Parse("11:29:04"), DateTime.Parse("11:29:19"), DateTime.Parse("11:29:29"), DateTime.Parse("11:29:39") };
+        private DateTime[] canlTestArr = { DateTime.Parse("11:28:02"), DateTime.Parse("11:29:02"), DateTime.Parse("11:29:17"), DateTime.Parse("11:29:27"), DateTime.Parse("11:29:29"), DateTime.Parse("11:29:47") };
         private int dev = 1;  //测试左右偏离多少秒
         private double testTickIntval=0.1;  //间隔多少秒
         private const int captainPort = 8850;           // 总控用于接收消息的端口号
@@ -241,53 +242,43 @@ namespace Captain
                             }
                         }
                         //当测试时间到时推送消息
-                        //MessageBox.Show(fastestTime.ToString() + "  " + testTick.ToString());
-                        int id = Array.IndexOf(testTickArr, fastestTime);
-                        if (id != -1)
+                        int testTickIdx = Array.IndexOf(testTickArr, fastestTime);
+                        //当到时间时取消测试
+                        int canltestIdx = Array.IndexOf(canlTestArr, fastestTime);
+                        if (testTickIdx != -1)
                         {
-                            //MessageBox.Show(fastestTime.ToString());
-                            //new Task(sendTestInstr).Start();
                             Thread threadSendTestInstr = new Thread(new ThreadStart(sendTestInstr));
                             //调用Start方法执行线程
                             threadSendTestInstr.Start();
-
-                            //Task.Run(() => {
-                            //    int sendSeq = 1; //发送的顺序
-                            //    for(int i= sendSeq; i<= 2 * dev / testTickIntval; sendSeq++)
-                            //    {
-                            //        DataRow[] foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
-                            //        if (foundRows.Length > 0)
-                            //        {
-                            //            for (int t = 0; t < foundRows.Length; t++)
-                            //            {
-                            //                byte[] binSendTest = Encoding.UTF8.GetBytes("initTest");
-                            //                if ((foundRows[t]["节点"]).GetType() is IPEndPoint)
-                            //                {
-                            //                    udpCli.Send(binSendTest, binSendTest.Length, (IPEndPoint)foundRows[t]["节点"]);
-                            //                    MessageBox.Show("111");
-                            //                }
-                            //            }
-
-                            //        }
-                            //        Thread.Sleep((int)(testTickIntval*50000));
-                            //    }
-
-
-
-                            //});
-                            //byte[] bin = Encoding.UTF8.GetBytes("initTest");
-                            //udpCli.Send(bin, bin.Length, brdcsEp);
+                        }
+                        if (canltestIdx != -1)
+                        {
+                            Thread threadSendTestInstr = new Thread(new ThreadStart(sendCanlTestInstr));
+                            //调用Start方法执行线程
+                            threadSendTestInstr.Start();
                         }
                     }
                 }
             }
         }
 
+        //发送测试指令
         private void sendTestInstr()
         {
             for (int sendSeq = 1; sendSeq <= 2 * dev / testTickIntval; sendSeq++)
             {
-                DataRow[] foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
+                DataRow[] foundRows;
+                if (fastestTime == testTickArr[testTickArr.Length - 1])
+                {
+                    System.Console.WriteLine("1111111111111111111111111111111111111");
+                    //最后一次测试伏击时间早于11：29：47的不执行
+                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 > '" + 0.479016203703704 + "'");
+                    System.Console.WriteLine(foundRows.Length);
+                }
+                else
+                {
+                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
+                }
                 if (foundRows.Length > 0)
                 {
                     for (int t = 0; t < foundRows.Length; t++)
@@ -305,6 +296,16 @@ namespace Captain
 
                 }
                 Thread.Sleep((int)(testTickIntval * 1000));
+            }
+        }
+
+        //发送取消测试指令
+        private void sendCanlTestInstr()
+        {
+            lock (udpCli)
+            {
+                byte[] binSendCanlTest = Encoding.UTF8.GetBytes("canlTest");
+                udpCli.Send(binSendCanlTest, binSendCanlTest.Length, brdcsEp);
             }
         }
 
