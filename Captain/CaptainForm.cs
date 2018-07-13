@@ -50,6 +50,7 @@ namespace Captain
             {
                 ExcelToDataTable(global.paramFilePath, true);
                 tbAddTestTimeCol(paramTable, dev, testTickIntval);     //左右1秒，间隔0.1秒进行测试
+                dgvMain.DataSource = paramTable;
                 //MessageBox.Show(temp.Rows[1][1].ToString());
                 ////MessageBox.Show((temp.Rows.Count).ToString());
                 //DataRow[] drs3 = paramTable.Select("组号 = 'A1'");
@@ -163,6 +164,9 @@ namespace Captain
                 case "ReqLogin":            // 用户登录请求
                     userLogin(msgCont, remoteEp);
                     break;
+                case "ReqLogout":           // 用户登出请求
+                    userLogout(msgCont);
+                    break;
                 case "MyData":              // 属下上报的价格和时间
                     updTimeAndPrice(msgCont);
                     break;
@@ -180,6 +184,7 @@ namespace Captain
                 // https://www.newtonsoft.com/json/help/html/SerializeDictionary.htm
                 // 需要先把DataRow转为Dictionary, 因为对于普通Object, JsonConvert仅转换其property
                 // 另外, 转换为JSON需要在给「节点」赋值前进行, 因为json.net无法把IPEndPoint转为字符串
+                row["节点"] = null;
                 var rowDict = row.Table.Columns.Cast<DataColumn>().ToDictionary(col => col.ColumnName, col => row[col.ColumnName]);
                 string json = JsonConvert.SerializeObject(rowDict);
                 byte[] jsBin = Encoding.UTF8.GetBytes("MyParam: " + json);
@@ -195,6 +200,17 @@ namespace Captain
 
             byte[] bin = Encoding.UTF8.GetBytes("LoginResult: " + res);
             udpCli.Send(bin, bin.Length, remoteEp);
+        }
+
+        private void userLogout(string userId)
+        {
+            DataRow[] foundRows = paramTable.Select("手机号 = '" + userId + "'");
+            if (foundRows.Length > 0)
+            {
+                DataRow row = foundRows[0];
+                row["登陆"] = "";
+                row["节点"] = null;
+            }
         }
 
         private void updTimeAndPrice(string cont)
@@ -245,8 +261,7 @@ namespace Captain
         //发送测试指令
         private void sendTestInstr()
         {
-            int sendSeq = 1; //发送的顺序
-            for (int i = sendSeq; i <= 2 * dev / testTickIntval; sendSeq++)
+            for (int sendSeq = 1; sendSeq <= 2 * dev / testTickIntval; sendSeq++)
             {
                 DataRow[] foundRows;
                 if (fastestTime == testTickArr[testTickArr.Length - 1])

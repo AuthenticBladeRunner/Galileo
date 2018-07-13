@@ -14,6 +14,7 @@ using Tesseract;
 using System.Net.Sockets;
 using System.Net;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace Galileo
 {
@@ -68,7 +69,10 @@ namespace Galileo
         // 新建UdpClient并绑定端口，用于发送和接收UDP消息
         private UdpClient udpCli = new UdpClient(juniorPort);
 
+        private string myUserId = null;
         private Dictionary<string, object> myParam = null;      // 参数配置
+        // OCR Engine
+        private TesseractEngine tessEngine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default);
 
         public login loginForm;
 
@@ -179,6 +183,7 @@ namespace Galileo
         {
             if (String.IsNullOrEmpty(captainAddr))
                 return false;
+            myUserId = userId;
             byte[] bin = Encoding.UTF8.GetBytes("ReqLogin: " + userId);
             udpCli.Send(bin, bin.Length, captainAddr, captainPort);
             return true;
@@ -287,27 +292,18 @@ namespace Galileo
 
             try
             {
-                int screenWidth = webBrs.Width;
-                int screenHeight = webBrs.Height;
-
-                IntPtr myIntptr = webBrs.Handle;
-                int hwndInt = myIntptr.ToInt32();
-                IntPtr hwnd = myIntptr;
-
-                // Set hdc to the bitmap
-                Bitmap bm = new Bitmap(screenWidth, screenHeight);
+                // Create a new bitmap
+                Bitmap bm = new Bitmap(webBrs.Width, webBrs.Height);
                 Graphics g = Graphics.FromImage(bm);
-                //得到webbrowser的DC
                 IntPtr hdc = g.GetHdc();
 
-                // Snapshot the WebBrowser
+                // Print WebBrowser snapshot to hdc
+                bool result = PrintWindow(webBrs.Handle, hdc, 0);
 
-                bool result = PrintWindow(hwnd, hdc, 0);
                 g.ReleaseHdc(hdc);
                 g.Flush();
 
                 // Save the bitmap, if successful
-
                 if (result == true)
                     bm.Save(global.wholeShotImgPath);
                 bm.Dispose();
@@ -398,40 +394,77 @@ namespace Galileo
             //string result = Marshal.PtrToStringAnsi(OCR(imgPath, -1));
             //return result;
         }
-
-        // tessnet2图像识别暂时不用
+        
         // TessNet2 is based on Tesseract v2.04 and has not been updated since September 2009.
         // Tesseract 3 .NET wrapper is available here: https://github.com/charlesw/tesseract
         private string executeOCR_By_tesseract(String imgPath)
         {
             try
             {
-                var img = Pix.LoadFromFile(imgPath);
+                //var img = Pix.LoadFromFile(imgPath);
+                var srcImg = System.Drawing.Image.FromFile(imgPath);
+                var img = scaleImage(srcImg, 2);        // Scale up and extend the canvas to get a better result
+                srcImg.Dispose();
 
-                var engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default);
-                engine.SetVariable("tessedit_char_whitelist", "0123456789:");   // Digits & colons only
-                
-                var page = engine.Process(img);
+                //tessEngine.SetVariable("tessedit_char_whitelist", "0123456789:");   // Digits & colons only
+                //tessEngine.DefaultPageSegMode = PageSegMode.SingleWord;     // Without this, the text may not be recognized at all (because of the narrow page margin)
+
+                var page = tessEngine.Process(img, PageSegMode.SingleWord);     // 如果使用SingleBlock, 识别结果中可能包含空格
                 var text = page.GetText();
-                
+
+                page.Dispose();
+                img.Dispose();
+
+                Console.WriteLine(text);
                 return text;
+
+
             }
             catch (Exception e)
             {
+                Console.WriteLine("Tesseract error: " + e.ToString());
                 return "Tesseract error: " + e.ToString();
             }
+        }
+
+        // 按比例缩放图像 (并拓宽边界, 以提高识别率)
+        private Bitmap scaleImage(Image srcImg, double scale)
+        {
+            var desWidth = (int)(srcImg.Width * scale);
+            var desHeight = (int)(srcImg.Height * scale);
+
+            Bitmap newimg = new Bitmap(desWidth + 20, desHeight + 20);      // 增加边距
+
+            using (Graphics g = Graphics.FromImage(newimg))
+            {
+                g.Clear(Color.White);
+
+                // Here you set your interpolation mode
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+
+                // Scale the image, by drawing it on the larger bitmap
+                g.DrawImage(srcImg, new Rectangle(10, 10, desWidth, desHeight));
+            }
+
+            return newimg;
         }
 
         //识别图像
         private void recogniseImg()
         {
-            String time = adjOCR(executeOCR_By_Asprise(global.timeImgPath));
-            String price = adjOCR(executeOCR_By_Asprise(global.priceImgPath));
+            Stopwatch sw = new Stopwatch();
+            //sw.Reset();
+            sw.Start();
 
-            //String time = executeOCR_By_tesseract(global.timeImgPath);
-            //String price = executeOCR_By_tesseract(global.priceImgPath);
+            //String time = adjOCR(executeOCR_By_Asprise(global.timeImgPath));
+            //String price = adjOCR(executeOCR_By_Asprise(global.priceImgPath));
 
-            reportMine(time, price);    // 向总控汇报我的时间和价格
+            String time = executeOCR_By_tesseract(global.timeImgPath);
+            String price = executeOCR_By_tesseract(global.priceImgPath);
+
+            sw.Stop();
+            Console.WriteLine("OCR time: " + sw.ElapsedMilliseconds + " ms");
+
 
             //部分识别速度是否会快一些
             //String time = adjOCR(executeOCR_By_Asprise(global.wholeShotImgPath, 175, 398, 65, 13));
@@ -445,15 +478,18 @@ namespace Galileo
             //    price = adjOCR(executeOCR_By_Asprise(global.wholeShotImgPath, 202, 390, 43, 13));
             //}     
 
+            var prevTime = timeNow;
+
             DateTime.TryParse(time, out timeNow);
             int.TryParse(price, out lowerPrice);
+
+            if (timeNow > prevTime)
+                reportMine(time, price);    // 向总控汇报我的时间和价格
 
             //timeNow = Convert.ToDateTime(time);
             //lowerPrice = int.Parse(price);
 
-            this.textBox1.Text = time;
-            this.textBox1.Text += "\n";
-            this.textBox1.Text += price;
+            this.textBox1.Text = time + Environment.NewLine + price;
         }
 
         //OCR纠错
@@ -662,6 +698,12 @@ namespace Galileo
         private void frmMain_FormClosing(object sender, FormClosingEventArgs e)
         {
             isStartScan = false;
+            // 发出登出请求
+            if (!String.IsNullOrEmpty(captainAddr))
+            {
+                byte[] bin = Encoding.UTF8.GetBytes("ReqLogout: " + myUserId);
+                udpCli.Send(bin, bin.Length, captainAddr, captainPort);
+            }
             System.Environment.Exit(0);
         }
 
