@@ -43,6 +43,7 @@ namespace Galileo
                 this.Invoke((MethodInvoker)delegate ()
                 {
                     this.Hide();
+                    mainForm.loggedIn = true;
                     mainForm.Show();
                 });
             }

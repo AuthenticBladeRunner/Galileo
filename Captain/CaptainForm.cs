@@ -36,6 +36,7 @@ namespace Captain
 
         private DateTime fastestTime = DateTime.Today;  // 从下属拿到的最快的时间
         private int fastestPrice = 0;                   // 从下属拿到的最快的价格
+        private object valueLock = new object();        // 用于在修改时间和价格时加锁
 
         private DataTable paramTable = new DataTable();        // 配置表
 
@@ -224,35 +225,38 @@ namespace Captain
 
             if (DateTime.TryParse(comp[0], out jrTime))
             {
-                if (jrTime > fastestTime)
+                lock (valueLock)
                 {
-                    fastestTime = jrTime;   // 是否需要加lock?
-                    if (int.TryParse(comp[1], out jrPrice))
+                    if (jrTime > fastestTime)
                     {
-                        fastestPrice = jrPrice;
-                        // 只有当时间和价格都更新时, 才发送最快时间信息
-                        byte[] bin = Encoding.UTF8.GetBytes("FastestData: " + 
-                            fastestTime.ToString("HH:mm:ss") + ";" + fastestPrice);
-                        lock (udpCli)
+                        fastestTime = jrTime;   // 是否需要加lock?
+                        if (int.TryParse(comp[1], out jrPrice))
                         {
-                            udpCli.Send(bin, bin.Length, brdcsEp);
+                            fastestPrice = jrPrice;
+                            // 只有当时间和价格都更新时, 才发送最快时间信息
+                            byte[] bin = Encoding.UTF8.GetBytes("FastestData: " +
+                                fastestTime.ToString("HH:mm:ss") + ";" + fastestPrice);
+                            lock (udpCli)
+                            {
+                                udpCli.Send(bin, bin.Length, brdcsEp);
+                            }
                         }
-                    }
-                    //当测试时间到时推送消息
-                    int testTickIdx = Array.IndexOf(testTickArr, fastestTime);
-                    //当到时间时取消测试
-                    int canltestIdx = Array.IndexOf(canlTestArr, fastestTime);
-                    if (testTickIdx != -1)
-                    {
-                        Thread threadSendTestInstr = new Thread(new ThreadStart(sendTestInstr));
-                        //调用Start方法执行线程
-                        threadSendTestInstr.Start();
-                    }
-                    if (canltestIdx != -1)
-                    {
-                        Thread threadSendTestInstr = new Thread(new ThreadStart(sendCanlTestInstr));
-                        //调用Start方法执行线程
-                        threadSendTestInstr.Start();
+                        //当测试时间到时推送消息
+                        int testTickIdx = Array.IndexOf(testTickArr, fastestTime);
+                        //当到时间时取消测试
+                        int canltestIdx = Array.IndexOf(canlTestArr, fastestTime);
+                        if (testTickIdx != -1)
+                        {
+                            Thread threadSendTestInstr = new Thread(new ThreadStart(sendTestInstr));
+                            //调用Start方法执行线程
+                            threadSendTestInstr.Start();
+                        }
+                        if (canltestIdx != -1)
+                        {
+                            Thread threadSendTestInstr = new Thread(new ThreadStart(sendCanlTestInstr));
+                            //调用Start方法执行线程
+                            threadSendTestInstr.Start();
+                        }
                     }
                 }
             }

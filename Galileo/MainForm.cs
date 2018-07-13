@@ -54,10 +54,13 @@ namespace Galileo
         private Point layPrcOkCP = new Point(600, 503);            //点击出价确定
         private Point layPrcCancelCP = new Point(795, 503);        //点击出价取消
 
-        private Rectangle wholeScreenRect = new Rectangle(175, 398, 65, 13); //整屏区域
+        private Rectangle timeRect = new Rectangle(175, 398, 65, 13);        //时间区域
         private Rectangle prcAfter11Rect = new Rectangle(201, 414, 43, 13);  //11:00后价格区域
         private Rectangle prcBefore11Rect = new Rectangle(202, 430, 43, 13); //10:30-11:00的价格区域
         private Rectangle test1 = new Rectangle(202, 430, 43, 13);
+
+        private Image timeImg = null;   // new Bitmap(0, 0);
+        private Image priceImg = null;  // new Bitmap(0, 0);
 
 
         private string captainAddr = null;              // 总控的IP地址
@@ -75,6 +78,7 @@ namespace Galileo
         private TesseractEngine tessEngine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default);
 
         public login loginForm;
+        public bool loggedIn = false;
 
         public frmMain()
         {
@@ -150,20 +154,25 @@ namespace Galileo
                 case "LoginResult":
                     loginForm.LoginCallback(msgCont);
                     break;
-                case "FastestData":
-                    // 更新时间和价格
-                    exTimeMinitor(msgCont);
-                    break;
-                case "initTest":
-                    Thread threadTestType = new Thread(new ThreadStart(callGUItoTestType));
-                    threadTestType.Start();
-                    break;
-                case "canlTest":
-                    Thread threadCanlTest = new Thread(new ThreadStart(callGUItoCanlTest));
-                    threadCanlTest.Start();
-                    break;
+            }
 
-
+            if (loggedIn)
+            {
+                switch (msgType)
+                {
+                    case "FastestData":
+                        // 更新时间和价格
+                        exTimeMinitor(msgCont);
+                        break;
+                    case "initTest":
+                        Thread threadTestType = new Thread(new ThreadStart(callGUItoTestType));
+                        threadTestType.Start();
+                        break;
+                    case "canlTest":
+                        Thread threadCanlTest = new Thread(new ThreadStart(callGUItoCanlTest));
+                        threadCanlTest.Start();
+                        break;
+                }
             }
         }
 
@@ -235,14 +244,18 @@ namespace Galileo
             while (isStartScan)
             {
                 //Console.WriteLine("开始扫描...");
-                //整个browser截图
-                saveDataShot();
+                //截图
+                takeScrnshot();
 
                 //识别图片信息
                 recogniseImg();
 
                 //执行策略
                 //excuteStrategy();
+
+                timeImg.Dispose();
+                priceImg.Dispose();
+
                 //设置扫描时间间隔
                 Thread.Sleep(global.scanInterval);
 
@@ -263,7 +276,7 @@ namespace Galileo
         static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         //截图
-        private void saveDataShot()
+        private void takeScrnshot()
         {
             /*
             // 这种方法是截取整个屏幕
@@ -292,6 +305,10 @@ namespace Galileo
 
             try
             {
+                Stopwatch sw = new Stopwatch();
+                //sw.Reset();
+                sw.Start();
+
                 // Create a new bitmap
                 Bitmap bm = new Bitmap(webBrs.Width, webBrs.Height);
                 Graphics g = Graphics.FromImage(bm);
@@ -303,16 +320,31 @@ namespace Galileo
                 g.ReleaseHdc(hdc);
                 g.Flush();
 
+
                 // Save the bitmap, if successful
-                if (result == true)
-                    bm.Save(global.wholeShotImgPath);
-                bm.Dispose();
+                //if (result == true)
+                //    bm.Save(global.wholeShotImgPath);
+                //bm.Dispose();
                 g.Dispose();
 
+                // Crop the screenshot to get the time shot and price shot
+                timeImg = cropImage(bm, timeRect);
+                //timeImg.Save(global.timeImgPath);
+                if (timeNow >= Convert.ToDateTime("11:00:00"))   //11:00至11：30的价格（修改出价时段）
+                {
+                    priceImg = cropImage(bm, prcAfter11Rect);
+                }
+                else  //10：30至11：00的价格（首次出价时段）
+                {
+                    priceImg = cropImage(bm, prcBefore11Rect);
+                }
+                //priceImg.Save(global.priceImgPath);
 
+                bm.Dispose();
 
+                /*
                 //51沪牌模拟
-                CaptureImg(global.wholeShotImgPath, global.timeImgPath, wholeScreenRect);
+                CaptureImg(global.wholeShotImgPath, global.timeImgPath, timeRect);
                 //File.Copy(global.timeImgPath, "img/"+DateTime.Now.Second.ToString() + ".png");
                 if (timeNow >= Convert.ToDateTime("11:00:00"))   //11:00至11：30的价格（修改出价时段）
                 {
@@ -322,6 +354,10 @@ namespace Galileo
                 {
                     CaptureImg(global.wholeShotImgPath, global.priceImgPath, prcBefore11Rect);
                 }
+                //*/
+
+                sw.Stop();
+                Console.WriteLine("Snapshot time: " + sw.ElapsedMilliseconds + " ms");
 
                 ////正式情况下用
                 //CaptureImg(global.wholeShotImgPath, 176, 359, global.timeImgPath, 58, 13);
@@ -350,6 +386,23 @@ namespace Galileo
             {
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        // 裁剪图片
+        private Image cropImage(Image srcImg, Rectangle r)
+        {
+            //创建新图位图
+            Bitmap desBmp = new Bitmap(r.Width, r.Height);
+            //创建作图区域
+            Graphics g = Graphics.FromImage(desBmp);
+            //截取原图相应区域写入作图区
+            g.DrawImage(srcImg, 0, 0, r, GraphicsUnit.Pixel);
+
+            //释放资源   
+            g.Dispose();
+
+            // The Bitmap class is an implementation of the Image class. The Image class is an abstract class.
+            return desBmp;
         }
 
         #region 从大图中截取一部分图片
@@ -397,20 +450,20 @@ namespace Galileo
         
         // TessNet2 is based on Tesseract v2.04 and has not been updated since September 2009.
         // Tesseract 3 .NET wrapper is available here: https://github.com/charlesw/tesseract
-        private string executeOCR_By_tesseract(String imgPath)
+        private string executeOCR_By_tesseract(Image srcImg)
         {
             try
             {
                 //var img = Pix.LoadFromFile(imgPath);
-                var srcImg = System.Drawing.Image.FromFile(imgPath);
-                var img = scaleImage(srcImg, 2);        // Scale up and extend the canvas to get a better result
+                //var srcImg = System.Drawing.Image.FromFile(imgPath);
+                var img = scaleImage(srcImg, 2.3, 2);        // Scale up and extend the canvas to get a better result
                 srcImg.Dispose();
 
                 tessEngine.SetVariable("tessedit_char_whitelist", "0123456789:");   // Digits & colons only
                 //tessEngine.DefaultPageSegMode = PageSegMode.SingleWord;     // Without this, the text may not be recognized at all (because of the narrow page margin)
 
                 var page = tessEngine.Process(img, PageSegMode.SingleWord);     // 如果使用SingleBlock, 识别结果中可能包含空格
-                var text = page.GetText();
+                var text = page.GetText().Trim();
 
                 page.Dispose();
                 img.Dispose();
@@ -428,10 +481,10 @@ namespace Galileo
         }
 
         // 按比例缩放图像 (并拓宽边界, 以提高识别率)
-        private Bitmap scaleImage(Image srcImg, double scale)
+        private Bitmap scaleImage(Image srcImg, double wscale, double hscale)
         {
-            var desWidth = (int)(srcImg.Width * scale);
-            var desHeight = (int)(srcImg.Height * scale);
+            var desWidth = (int)(srcImg.Width * wscale);
+            var desHeight = (int)(srcImg.Height * hscale);
 
             Bitmap newimg = new Bitmap(desWidth + 20, desHeight + 20);      // 增加边距
 
@@ -459,8 +512,8 @@ namespace Galileo
             //String time = adjOCR(executeOCR_By_Asprise(global.timeImgPath));
             //String price = adjOCR(executeOCR_By_Asprise(global.priceImgPath));
 
-            String time = executeOCR_By_tesseract(global.timeImgPath);
-            String price = executeOCR_By_tesseract(global.priceImgPath);
+            String time = executeOCR_By_tesseract(timeImg);
+            String price = executeOCR_By_tesseract(priceImg);
 
             sw.Stop();
             Console.WriteLine("OCR time: " + sw.ElapsedMilliseconds + " ms");
