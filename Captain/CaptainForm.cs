@@ -52,7 +52,7 @@ namespace Captain
                 tbAddTestTimeCol(paramTable, dev, testTickIntval);     //左右1秒，间隔0.1秒进行测试
                 dgvMain.DataSource = paramTable;
                 //MessageBox.Show(temp.Rows[1][1].ToString());
-                ////MessageBox.Show((temp.Rows.Count).ToString());
+                //MessageBox.Show((temp.Rows.Count).ToString());
                 //DataRow[] drs3 = paramTable.Select("组号 = 'A1'");
                 //MessageBox.Show(drs3.Length.ToString());
                 //textBox1.Text = drs3[0]["最迟提交时间"].ToString();
@@ -264,12 +264,15 @@ namespace Captain
             for (int sendSeq = 1; sendSeq <= 2 * dev / testTickIntval; sendSeq++)
             {
                 DataRow[] foundRows;
-                if (fastestTime == testTickArr[testTickArr.Length - 1])
+                if (fastestTime >= testTickArr[testTickArr.Length - 1])
                 {
-                    System.Console.WriteLine("1111111111111111111111111111111111111");
                     //最后一次测试伏击时间早于11：29：47的不执行
                     foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 > '" + 0.479016203703704 + "'");
-                    System.Console.WriteLine(foundRows.Length);
+                    //for(int i=0;i< foundRows.Length; i++)
+                    //{
+                    //    System.Console.WriteLine(foundRows[i]["手机号"]);
+                    //}
+                    
                 }
                 else
                 {
@@ -286,6 +289,7 @@ namespace Captain
                             lock (udpCli)
                             {
                                 udpCli.Send(binSendTest, binSendTest.Length, (IPEndPoint)foundRows[t]["节点"]);
+                                //System.Console.WriteLine(foundRows[t]["手机号"]);
                             }
                         }
                     }

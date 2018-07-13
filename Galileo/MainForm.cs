@@ -41,7 +41,7 @@ namespace Galileo
         private DateTime timeNow = DateTime.Today;       //当前时间
         private int lowerPrice = 0;                      //最低可成交价
         private int bdPrice;                             //标定价格
-        private string ambushTime;                       //伏击时间
+        private string ambushTime=null;                       //伏击时间
         private Boolean hasSetBDPrice = false;           //是否已经设定标定价格
         private Boolean hasLayPrice = false;             //是否已经正式出价
         private Boolean waitforSendPrice = false;        //
@@ -406,7 +406,7 @@ namespace Galileo
                 var img = scaleImage(srcImg, 2);        // Scale up and extend the canvas to get a better result
                 srcImg.Dispose();
 
-                //tessEngine.SetVariable("tessedit_char_whitelist", "0123456789:");   // Digits & colons only
+                tessEngine.SetVariable("tessedit_char_whitelist", "0123456789:");   // Digits & colons only
                 //tessEngine.DefaultPageSegMode = PageSegMode.SingleWord;     // Without this, the text may not be recognized at all (because of the narrow page margin)
 
                 var page = tessEngine.Process(img, PageSegMode.SingleWord);     // 如果使用SingleBlock, 识别结果中可能包含空格
@@ -485,6 +485,7 @@ namespace Galileo
 
             if (timeNow > prevTime)
                 reportMine(time, price);    // 向总控汇报我的时间和价格
+                
 
             //timeNow = Convert.ToDateTime(time);
             //lowerPrice = int.Parse(price);
@@ -519,7 +520,7 @@ namespace Galileo
             DateTime CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
             int CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
             //System.Console.WriteLine(myParam["伏击时间"].ToString().Substring(0, 8));
-            if (CapTime == DateTime.Parse(ambushTime.Substring(0, 8)))
+            if (!(ambushTime is null) && CapTime == DateTime.Parse(ambushTime.Substring(0, 8)))
             {
                 System.Console.WriteLine("出价");
                 System.Console.WriteLine(CapPrice);
