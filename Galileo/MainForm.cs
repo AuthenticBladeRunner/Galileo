@@ -40,7 +40,7 @@ namespace Galileo
         private DateTime timeNow = DateTime.Today;       //当前时间
         private int lowerPrice = 0;                      //最低可成交价
         private int bdPrice;                             //标定价格
-        private Boolean hasTestBid = false;              //是否已经测试打码
+        private string ambushTime;                       //伏击时间
         private Boolean hasSetBDPrice = false;           //是否已经设定标定价格
         private Boolean hasLayPrice = false;             //是否已经正式出价
         private Boolean waitforSendPrice = false;        //
@@ -137,7 +137,11 @@ namespace Galileo
                     break;
                 case "MyParam":
                     myParam = JsonConvert.DeserializeObject<Dictionary<string, object>>(msgCont);
+                    //将伏击时间由小数转换为时间格式的string
+                    double d = double.Parse(myParam["伏击时间"].ToString());
+                    ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
 
+                    System.Console.WriteLine(ambushTime);
                     break;
                 case "LoginResult":
                     loginForm.LoginCallback(msgCont);
@@ -147,15 +151,28 @@ namespace Galileo
                     exTimeMinitor(msgCont);
                     break;
                 case "initTest":
-                    //开启新线程
-                    //MessageBox.Show(DateTime.Now.ToString());
-                    Thread threadGetData = new Thread(new ThreadStart(callGUItoTestType));
-                    //调用Start方法执行线程
-                    threadGetData.Start();
-                    hasTestBid = true;
+                    Thread threadTestType = new Thread(new ThreadStart(callGUItoTestType));
+                    threadTestType.Start();
                     break;
+                case "canlTest":
+                    Thread threadCanlTest = new Thread(new ThreadStart(callGUItoCanlTest));
+                    threadCanlTest.Start();
+                    break;
+
+
             }
         }
+
+        //public DateTime FromOADatePrecise(double d)
+        //{
+        //    DateTime oaEpoch = new DateTime(1899, 12, 30);
+
+        //    if (!(d >= 0))
+        //        throw new ArgumentOutOfRangeException(); // NaN or negative d not supported
+
+        //    return oaEpoch + TimeSpan.FromTicks(Convert.ToInt64(d * TimeSpan.TicksPerDay));
+        //}
+
 
         // 向总控发送登录请求 (发送成功返回true)
         public bool ReqLogin(string userId)
@@ -462,10 +479,11 @@ namespace Galileo
         //时间监控，到时间执行策略
         private void exTimeMinitor(String msgCont)
         {
+
             DateTime CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
             int CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
             //System.Console.WriteLine(myParam["伏击时间"].ToString().Substring(0, 8));
-            if (CapTime == DateTime.Parse(myParam["伏击时间"].ToString().Substring(0, 8)))
+            if (CapTime == DateTime.Parse(ambushTime.Substring(0, 8)))
             {
                 System.Console.WriteLine("出价");
                 System.Console.WriteLine(CapPrice);
@@ -531,6 +549,11 @@ namespace Galileo
             mainThreadSynContext.Post(new SendOrPostCallback(sendPrice), null);//通知主线程
         }
 
+        private void callGUItoCanlTest()
+        {
+            mainThreadSynContext.Post(new SendOrPostCallback(cancelTest), null);//通知主线程
+        }
+
         //打码测试函数
         private void testType(object state)
         {
@@ -582,6 +605,17 @@ namespace Galileo
         {
             virtlMouClk(layPrcOkCP);
             waitforSendPrice = false;
+        }
+
+        //取消测试
+        private void cancelTest(object state)
+        {
+            if (openTestKeyDect == true)
+            {
+                virtlMouClk(layPrcCancelCP);
+                SendKeys.SendWait("{BACKSPACE}");
+                openTestKeyDect = false;
+            }
         }
 
         /*
