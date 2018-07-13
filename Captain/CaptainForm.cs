@@ -23,6 +23,7 @@ namespace Captain
     {
         //测试时间的Tick,已往左偏离1秒方便计算
         private DateTime[] testTickArr= { DateTime.Parse("11:27:04"), DateTime.Parse("11:28:04"), DateTime.Parse("11:29:04"), DateTime.Parse("11:29:19"), DateTime.Parse("11:29:29"), DateTime.Parse("11:29:39") };
+        //取消测试的时间一般是下次测试提交两秒，最后一次例外
         private DateTime[] canlTestArr = { DateTime.Parse("11:28:02"), DateTime.Parse("11:29:02"), DateTime.Parse("11:29:17"), DateTime.Parse("11:29:27"), DateTime.Parse("11:29:29"), DateTime.Parse("11:29:47") };
         private int dev = 1;  //测试左右偏离多少秒
         private double testTickIntval=0.1;  //间隔多少秒

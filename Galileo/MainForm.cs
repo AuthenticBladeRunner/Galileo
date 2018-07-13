@@ -38,16 +38,21 @@ namespace Galileo
         static extern IntPtr OCRpartBarCodes(string file, int type, int startX, int startY, int width, int height);
 
         private SynchronizationContext mainThreadSynContext;
-        private DateTime timeNow = DateTime.Today;       //当前时间
-        private int lowerPrice = 0;                      //最低可成交价
-        private int bdPrice;                             //标定价格
-        private string ambushTime=null;                       //伏击时间
-        private Boolean hasSetBDPrice = false;           //是否已经设定标定价格
-        private Boolean hasLayPrice = false;             //是否已经正式出价
-        private Boolean waitforSendPrice = false;        //
-        private Boolean openTestKeyDect = false;         //开启测试打码键盘监控
-        private Boolean openLayPriceKeyDect = false;     //开启出价打码键盘监控
-        //private Boolean testFlag=false;                //测试变量
+        private DateTime timeNow = DateTime.Today;                           //当前时间
+        private int lowerPrice = 0;                                          //最低可成交价
+        private int bdPrice;                                                 //标定价格
+        private DateTime setBDPriceTick;                                     //设定标定价格时间
+        private int bdAddPrice;                                              //标定价格在最低价位基础上加价多少
+        private int bdAddPriceAdj;                                           //标定价格加价调整
+        private DateTime latestLayTick;                                      //最晚出价时间
+        private string ambushTime=null;                                      //伏击时间
+        private string ambushPrice=null;                                     //伏击价格
+        private Boolean hasSetBDPrice = false;                               //是否已经设定标定价格
+        private Boolean hasLayPrice = false;                                 //是否已经正式出价
+        private Boolean waitforSendPrice = false;                            //
+        private Boolean openTestKeyDect = false;                             //开启测试打码键盘监控
+        private Boolean openLayPriceKeyDect = false;                         //开启出价打码键盘监控
+        //private Boolean testFlag=false;                                    //测试变量
 
         private Point layPrcInptBoxCP= new Point(680, 420);        //点击出价输入框
         private Point layPrcBtnCP = new Point(845, 420);           //点击出价按钮
@@ -58,6 +63,16 @@ namespace Galileo
         private Rectangle prcAfter11Rect = new Rectangle(201, 414, 43, 13);  //11:00后价格区域
         private Rectangle prcBefore11Rect = new Rectangle(202, 430, 43, 13); //10:30-11:00的价格区域
         private Rectangle test1 = new Rectangle(202, 430, 43, 13);
+
+
+        
+        //智能最高价及极高价的Tick时间
+        private DateTime[] intelPriceTickArr = { DateTime.Parse("11:29:40"), DateTime.Parse("11:29:45"), DateTime.Parse("11:29:48"), DateTime.Parse("11:29:50")};
+        private int intelMaxPrice = 0;  //智能最高价出价
+        private int intelExtmPrice = 0;  //智能极高价出价
+        private int[] intelMaxAddPrice = { 1100, 1000, 800, 700 };   //智能最高价加价
+        private int[] intelExtmAddPrice = { 1200, 1100, 800, 700 };   //智能极高价加价
+
 
         private Image timeImg = null;   // new Bitmap(0, 0);
         private Image priceImg = null;  // new Bitmap(0, 0);
@@ -145,11 +160,7 @@ namespace Galileo
                     break;
                 case "MyParam":
                     myParam = JsonConvert.DeserializeObject<Dictionary<string, object>>(msgCont);
-                    //将伏击时间由小数转换为时间格式的string
-                    double d = double.Parse(myParam["伏击时间"].ToString());
-                    ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
-
-                    System.Console.WriteLine(ambushTime);
+                    setParam();
                     break;
                 case "LoginResult":
                     loginForm.LoginCallback(msgCont);
@@ -174,6 +185,31 @@ namespace Galileo
                         break;
                 }
             }
+        }
+
+        //给参数赋值
+        private void setParam()
+        {
+            //设置伏击时间
+            double d = double.Parse(myParam["伏击时间"].ToString());
+            //将伏击时间由小数转换为时间格式的string
+            ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
+            //System.Console.WriteLine(ambushTime);
+
+            //设置标定价格时间
+            setBDPriceTick= Convert.ToDateTime("11:29:"+myParam["5x提交"].ToString().Split(new char[] { '+'})[0]);
+            System.Console.WriteLine(setBDPriceTick);
+
+            //设置标定价格加价多少
+            bdAddPrice = int.Parse(myParam["5x提交"].ToString().Split(new char[] { '+' })[1]);
+            System.Console.WriteLine(bdAddPrice);
+
+            //设置最晚提交时间
+            latestLayTick = Convert.ToDateTime("11:29:" + myParam["最晚提交时间"].ToString());
+            System.Console.WriteLine(latestLayTick);
+
+            //
+
         }
 
         //public DateTime FromOADatePrecise(double d)
@@ -569,10 +605,26 @@ namespace Galileo
         //时间监控，到时间执行策略
         private void exTimeMinitor(String msgCont)
         {
-
+            
             DateTime CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
             int CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
-            //System.Console.WriteLine(myParam["伏击时间"].ToString().Substring(0, 8));
+            //System.Console.WriteLine(CapTime);
+            //System.Console.WriteLine(CapPrice);
+            int maxPriceArrIdx = Array.IndexOf(intelPriceTickArr, CapTime);
+            if (maxPriceArrIdx!=-1)
+            {
+                if (CapPrice + intelMaxAddPrice[maxPriceArrIdx] > intelMaxPrice)
+                {
+                    intelMaxPrice = CapPrice + intelMaxAddPrice[maxPriceArrIdx];
+                }
+                if (CapPrice + intelExtmAddPrice[maxPriceArrIdx] > intelExtmPrice)
+                {
+                    intelExtmPrice = CapPrice + intelExtmAddPrice[maxPriceArrIdx];
+                }
+             }
+            //System.Console.WriteLine(intelMaxPrice);
+            //System.Console.WriteLine(intelExtmPrice);
+
             if (!(ambushTime is null) && CapTime == DateTime.Parse(ambushTime.Substring(0, 8)))
             {
                 System.Console.WriteLine("出价");
