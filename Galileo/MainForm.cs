@@ -78,6 +78,7 @@ namespace Galileo
         private TesseractEngine tessEngine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default);
 
         public login loginForm;
+        public bool loggedIn = false;
 
         public frmMain()
         {
@@ -153,20 +154,25 @@ namespace Galileo
                 case "LoginResult":
                     loginForm.LoginCallback(msgCont);
                     break;
-                case "FastestData":
-                    // 更新时间和价格
-                    exTimeMinitor(msgCont);
-                    break;
-                case "initTest":
-                    Thread threadTestType = new Thread(new ThreadStart(callGUItoTestType));
-                    threadTestType.Start();
-                    break;
-                case "canlTest":
-                    Thread threadCanlTest = new Thread(new ThreadStart(callGUItoCanlTest));
-                    threadCanlTest.Start();
-                    break;
+            }
 
-
+            if (loggedIn)
+            {
+                switch (msgType)
+                {
+                    case "FastestData":
+                        // 更新时间和价格
+                        exTimeMinitor(msgCont);
+                        break;
+                    case "initTest":
+                        Thread threadTestType = new Thread(new ThreadStart(callGUItoTestType));
+                        threadTestType.Start();
+                        break;
+                    case "canlTest":
+                        Thread threadCanlTest = new Thread(new ThreadStart(callGUItoCanlTest));
+                        threadCanlTest.Start();
+                        break;
+                }
             }
         }
 
@@ -323,6 +329,7 @@ namespace Galileo
 
                 // Crop the screenshot to get the time shot and price shot
                 timeImg = cropImage(bm, timeRect);
+                //timeImg.Save(global.timeImgPath);
                 if (timeNow >= Convert.ToDateTime("11:00:00"))   //11:00至11：30的价格（修改出价时段）
                 {
                     priceImg = cropImage(bm, prcAfter11Rect);
@@ -331,6 +338,7 @@ namespace Galileo
                 {
                     priceImg = cropImage(bm, prcBefore11Rect);
                 }
+                //priceImg.Save(global.priceImgPath);
 
                 bm.Dispose();
 
@@ -448,14 +456,14 @@ namespace Galileo
             {
                 //var img = Pix.LoadFromFile(imgPath);
                 //var srcImg = System.Drawing.Image.FromFile(imgPath);
-                var img = scaleImage(srcImg, 2);        // Scale up and extend the canvas to get a better result
+                var img = scaleImage(srcImg, 2.3, 2);        // Scale up and extend the canvas to get a better result
                 srcImg.Dispose();
 
                 //tessEngine.SetVariable("tessedit_char_whitelist", "0123456789:");   // Digits & colons only
                 //tessEngine.DefaultPageSegMode = PageSegMode.SingleWord;     // Without this, the text may not be recognized at all (because of the narrow page margin)
 
                 var page = tessEngine.Process(img, PageSegMode.SingleWord);     // 如果使用SingleBlock, 识别结果中可能包含空格
-                var text = page.GetText();
+                var text = page.GetText().Trim();
 
                 page.Dispose();
                 img.Dispose();
@@ -473,10 +481,10 @@ namespace Galileo
         }
 
         // 按比例缩放图像 (并拓宽边界, 以提高识别率)
-        private Bitmap scaleImage(Image srcImg, double scale)
+        private Bitmap scaleImage(Image srcImg, double wscale, double hscale)
         {
-            var desWidth = (int)(srcImg.Width * scale);
-            var desHeight = (int)(srcImg.Height * scale);
+            var desWidth = (int)(srcImg.Width * wscale);
+            var desHeight = (int)(srcImg.Height * hscale);
 
             Bitmap newimg = new Bitmap(desWidth + 20, desHeight + 20);      // 增加边距
 
@@ -564,7 +572,7 @@ namespace Galileo
             DateTime CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
             int CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
             //System.Console.WriteLine(myParam["伏击时间"].ToString().Substring(0, 8));
-            if (CapTime == DateTime.Parse(ambushTime.Substring(0, 8)))
+            if (!(ambushTime is null) && CapTime == DateTime.Parse(ambushTime.Substring(0, 8)))
             {
                 System.Console.WriteLine("出价");
                 System.Console.WriteLine(CapPrice);
