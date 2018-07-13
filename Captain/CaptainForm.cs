@@ -248,7 +248,18 @@ namespace Captain
             int sendSeq = 1; //发送的顺序
             for (int i = sendSeq; i <= 2 * dev / testTickIntval; sendSeq++)
             {
-                DataRow[] foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
+                DataRow[] foundRows;
+                if (fastestTime == testTickArr[testTickArr.Length - 1])
+                {
+                    System.Console.WriteLine("1111111111111111111111111111111111111");
+                    //最后一次测试伏击时间早于11：29：47的不执行
+                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 > '" + 0.479016203703704 + "'");
+                    System.Console.WriteLine(foundRows.Length);
+                }
+                else
+                {
+                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "'");
+                }
                 if (foundRows.Length > 0)
                 {
                     for (int t = 0; t < foundRows.Length; t++)
