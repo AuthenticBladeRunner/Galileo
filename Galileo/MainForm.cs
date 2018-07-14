@@ -294,7 +294,7 @@ namespace Galileo
         {
             if (String.IsNullOrEmpty(captainAddr))
                 return false;
-            byte[] bin = Encoding.UTF8.GetBytes("missionComplete");
+            byte[] bin = Encoding.UTF8.GetBytes("missionComplete: " + myUserId);
             udpCli.Send(bin, bin.Length, captainAddr, captainPort);
             return true;
         }
@@ -876,6 +876,7 @@ namespace Galileo
             }
             virtlMouClk(layPrcOkCP);
             hasSendPrice = true;
+            reportSendPrice();
         }
 
         //取消测试

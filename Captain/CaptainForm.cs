@@ -173,6 +173,7 @@ namespace Captain
                     updTimeAndPrice(msgCont);
                     break;
                 case "missionComplete":
+                    setBidFlag(msgCont);
                     break;
             }
         }
@@ -214,6 +215,16 @@ namespace Captain
                 DataRow row = foundRows[0];
                 row["登陆"] = "";
                 row["节点"] = null;
+            }
+        }
+
+        private void setBidFlag(string userId)
+        {
+            DataRow[] foundRows = paramTable.Select("手机号 = '" + userId + "'");
+            if (foundRows.Length > 0)
+            {
+                DataRow row = foundRows[0];
+                row["出价"] = "是";
             }
         }
 
