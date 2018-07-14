@@ -39,17 +39,22 @@ namespace Galileo
 
         private SynchronizationContext mainThreadSynContext;
         private DateTime timeNow = DateTime.Today;                           //当前时间
+        DateTime CapTime;                                                    //总控时间
+        int CapPrice;                                                        //总控价格
+        private int testAddPrice = 700;                                      //测试加价数量
         private int lowerPrice = 0;                                          //最低可成交价
         private int bdPrice;                                                 //标定价格
         private DateTime setBDPriceTick;                                     //设定标定价格时间
         private int bdAddPrice;                                              //标定价格在最低价位基础上加价多少
-        private int bdAddPriceAdj;                                           //标定价格加价调整
+        private int bdAddPriceAdj=300;                                       //标定价格加价调根据经验整默认为300
         private DateTime latestLayTick;                                      //最晚出价时间
         private string ambushTime=null;                                      //伏击时间
-        private string ambushPrice=null;                                     //伏击价格
+        private DateTime ambushSecTime;                                      //伏击时间秒部分
+        private int ambushTimeMill;                                          //伏击时间毫秒部分
+        private string ambushPriceStr=null;                                  //伏击价格
+        private double commtDelay=0;                                         //提交延时
         private Boolean hasSetBDPrice = false;                               //是否已经设定标定价格
-        private Boolean hasLayPrice = false;                                 //是否已经正式出价
-        private Boolean waitforSendPrice = false;                            //
+        private Boolean hasSendPrice = false;                                //是否已经正式出价
         private Boolean openTestKeyDect = false;                             //开启测试打码键盘监控
         private Boolean openLayPriceKeyDect = false;                         //开启出价打码键盘监控
         //private Boolean testFlag=false;                                    //测试变量
@@ -173,11 +178,15 @@ namespace Galileo
                 {
                     case "FastestData":
                         // 更新时间和价格
-                        exTimeMinitor(msgCont);
+                        exeTimeMonitor(msgCont);
                         break;
                     case "initTest":
-                        Thread threadTestType = new Thread(new ThreadStart(callGUItoTestType));
-                        threadTestType.Start();
+                        this.Invoke((MethodInvoker)delegate ()
+                        {
+                            testType();
+                        });
+                        //Thread threadTestType = new Thread(new ThreadStart(callGUItoTestType));
+                        //threadTestType.Start();
                         break;
                     case "canlTest":
                         Thread threadCanlTest = new Thread(new ThreadStart(callGUItoCanlTest));
@@ -191,24 +200,70 @@ namespace Galileo
         private void setParam()
         {
             //设置伏击时间
-            double d = double.Parse(myParam["伏击时间"].ToString());
-            //将伏击时间由小数转换为时间格式的string
-            ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
-            //System.Console.WriteLine(ambushTime);
+            if (myParam["伏击时间"].ToString() != "")
+            {
+                double d = double.Parse(myParam["伏击时间"].ToString());
+                //将伏击时间由小数转换为时间格式的string
+                ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
+                ambushSecTime = DateTime.Parse(ambushTime.Substring(0, 8));
+                ambushTimeMill = int.Parse(ambushTime.Substring(9, 1));
+                System.Console.WriteLine("伏击时间" + ambushTime);
+            }
+            else
+            {
+                MessageBox.Show("伏击时间为空，请联系管理员");
+            }
 
-            //设置标定价格时间
-            setBDPriceTick= Convert.ToDateTime("11:29:"+myParam["5x提交"].ToString().Split(new char[] { '+'})[0]);
-            System.Console.WriteLine(setBDPriceTick);
 
-            //设置标定价格加价多少
-            bdAddPrice = int.Parse(myParam["5x提交"].ToString().Split(new char[] { '+' })[1]);
-            System.Console.WriteLine(bdAddPrice);
+            //设置伏击价格
+            if (myParam["伏击价格"].ToString() != "")
+            {
+                ambushPriceStr = myParam["伏击价格"].ToString();
+                System.Console.WriteLine("伏击价格"+ ambushPriceStr);
+            }
+            else
+            {
+                MessageBox.Show("伏击价格为空，请联系管理员");
+            }
+
+            
+            if (myParam["5x提交"].ToString() != "")
+            {
+                //设置标定价格时间
+                setBDPriceTick = Convert.ToDateTime("11:29:" + myParam["5x提交"].ToString().Split(new char[] { '+' })[0]);
+                System.Console.WriteLine("标定价格时间"+setBDPriceTick);
+
+                //设置标定价格加价多少
+                bdAddPrice = int.Parse(myParam["5x提交"].ToString().Split(new char[] { '+' })[1]);
+                System.Console.WriteLine("标定价格加价"+bdAddPrice);
+            }
+            else
+            {
+                MessageBox.Show("5x提交为空，请联系管理员");
+            }
 
             //设置最晚提交时间
-            latestLayTick = Convert.ToDateTime("11:29:" + myParam["最晚提交时间"].ToString());
-            System.Console.WriteLine(latestLayTick);
+            if (myParam["最晚提交时间"].ToString() != "")
+            {
+                latestLayTick = Convert.ToDateTime("11:29:" + myParam["最晚提交时间"].ToString());
+                System.Console.WriteLine("最晚提交时间"+latestLayTick);
+            }
+            else
+            {
+                MessageBox.Show("最晚提交时间为空，请联系管理员");
+            }
 
-            //
+            //设置提交延时
+            if (myParam["5x提交延时"].ToString() != "")
+            {
+                commtDelay = double.Parse(myParam["5x提交延时"].ToString());
+                System.Console.WriteLine("5x提交延时"+commtDelay);
+            }
+            else
+            {
+                MessageBox.Show("5x提交延时为空，请联系管理员");
+            }
+            
 
         }
 
@@ -230,6 +285,16 @@ namespace Galileo
                 return false;
             myUserId = userId;
             byte[] bin = Encoding.UTF8.GetBytes("ReqLogin: " + userId);
+            udpCli.Send(bin, bin.Length, captainAddr, captainPort);
+            return true;
+        }
+
+        // 向总控发送已出价信息 (发送成功返回true)
+        public bool reportSendPrice()
+        {
+            if (String.IsNullOrEmpty(captainAddr))
+                return false;
+            byte[] bin = Encoding.UTF8.GetBytes("missionComplete");
             udpCli.Send(bin, bin.Length, captainAddr, captainPort);
             return true;
         }
@@ -603,13 +668,15 @@ namespace Galileo
         }
 
         //时间监控，到时间执行策略
-        private void exTimeMinitor(String msgCont)
+        private void exeTimeMonitor(String msgCont)
         {
-            
-            DateTime CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
-            int CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
+            //解析传来的时间和价格信息
+            CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
+            CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
             //System.Console.WriteLine(CapTime);
             //System.Console.WriteLine(CapPrice);
+
+            //监测是否要提取智能最高价
             int maxPriceArrIdx = Array.IndexOf(intelPriceTickArr, CapTime);
             if (maxPriceArrIdx!=-1)
             {
@@ -622,13 +689,42 @@ namespace Galileo
                     intelExtmPrice = CapPrice + intelExtmAddPrice[maxPriceArrIdx];
                 }
              }
-            //System.Console.WriteLine(intelMaxPrice);
-            //System.Console.WriteLine(intelExtmPrice);
+            System.Console.WriteLine("intelMaxPrice"+intelMaxPrice);
+            System.Console.WriteLine("intelExtmPrice"+intelExtmPrice);
 
-            if (!(ambushTime is null) && CapTime == DateTime.Parse(ambushTime.Substring(0, 8)))
+            //监测是否到了提取标定价格的时间
+            if(CapTime == setBDPriceTick)
             {
-                System.Console.WriteLine("出价");
-                System.Console.WriteLine(CapPrice);
+                //设定标定价格
+                bdPrice = CapPrice+bdAddPrice-bdAddPriceAdj;   
+                this.textBox2.Text += CapTime.ToString() + " 设标价时的最低价格:" + CapPrice;
+                textBox2.AppendText("\r\n");
+                this.textBox2.Text += timeNow.TimeOfDay.ToString()+" 标定价格:" +bdPrice;
+                textBox2.AppendText("\r\n");
+            }
+
+            //监测是否到了伏击时间
+            if (CapTime == ambushSecTime)
+            {
+                //Thread threadGetData = new Thread(new ThreadStart(callGUItoLayPrice, CapPrice));
+                //threadGetData.Start();
+                //textBox1.Text += bdPrice;
+
+                // The "invoke" call tells the form "Please execute this code in your thread rather than mine."
+                Thread.Sleep(ambushTimeMill*100);
+                this.Invoke((MethodInvoker)delegate ()
+                {
+                    layPrice();
+                });
+            }
+
+            //监测是否标定价大于最低可成交价并出价
+            if (CapPrice >= bdPrice && hasSendPrice == false)
+            {
+                this.Invoke((MethodInvoker)delegate ()
+                {
+                    sendPrice();
+                });
             }
         }
 
@@ -678,17 +774,17 @@ namespace Galileo
 
         private void callGUItoTestType()
         {
-            mainThreadSynContext.Post(new SendOrPostCallback(testType), null);//通知主线程
+            //mainThreadSynContext.Post(new SendOrPostCallback(testType), null);//通知主线程
         }
 
-        private void callGUItolayPrice()
+        private void callGUItoLayPrice(int CapPrice)
         {
-            mainThreadSynContext.Post(new SendOrPostCallback(layPrice), null);//通知主线程
+            //mainThreadSynContext.Post(new SendOrPostCallback(layPrice), null);//通知主线程
         }
 
         private void callGUItoSendPrice()
         {
-            mainThreadSynContext.Post(new SendOrPostCallback(sendPrice), null);//通知主线程
+            //mainThreadSynContext.Post(new SendOrPostCallback(sendPrice), null);//通知主线程
         }
 
         private void callGUItoCanlTest()
@@ -697,7 +793,7 @@ namespace Galileo
         }
 
         //打码测试函数
-        private void testType(object state)
+        private void testType()
         {
             //按出价输入框
             virtlMouClk(layPrcInptBoxCP);
@@ -705,11 +801,13 @@ namespace Galileo
             SendKeys.Send  异步模拟按键(不阻塞UI)
             SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
             */
-            SendKeys.SendWait((lowerPrice + global.testAddPrice).ToString());
+            SendKeys.SendWait((CapPrice + testAddPrice).ToString());
+            textBox2.Text += "现在验证码测试...";
+            this.textBox2.AppendText("\r\n");
             Thread.Sleep(300);
             SendKeys.Flush();
 
-            textBox2.Text += timeNow.TimeOfDay.ToString() + " 测试出价：" + (lowerPrice + global.testAddPrice).ToString();
+            textBox2.Text += CapTime.ToString() + " 测试出价：" + (CapPrice + testAddPrice).ToString();
             textBox2.AppendText("\r\n"); ;
 
             //按出价
@@ -719,7 +817,7 @@ namespace Galileo
         }
 
         //正式出价
-        private void layPrice(object state)
+        private void layPrice()
         {
             //按出价输入框
             virtlMouClk(layPrcInptBoxCP);
@@ -727,10 +825,13 @@ namespace Galileo
             SendKeys.Send  异步模拟按键(不阻塞UI)
             SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
             */
-            SendKeys.SendWait((lowerPrice + global.AddPrice).ToString());
-            textBox2.Text += timeNow.TimeOfDay.ToString() + " 正式出价时最低价：" + lowerPrice.ToString();
+            int ambushPrice = calAmbushPrice(CapPrice);
+            SendKeys.SendWait(ambushPrice.ToString());
+            textBox2.Text += "现在正式出价...";
             this.textBox2.AppendText("\r\n");
-            textBox2.Text += timeNow.TimeOfDay.ToString() + " 正式出价：" + (lowerPrice + global.AddPrice).ToString();
+            textBox2.Text += CapTime.ToString() + " 正式出价时最低价：" + CapPrice.ToString();
+            this.textBox2.AppendText("\r\n");
+            textBox2.Text += CapTime.ToString() + " 正式出价：" + ambushPrice.ToString();
             this.textBox2.AppendText("\r\n");
             Thread.Sleep(300);
             SendKeys.Flush();
@@ -742,11 +843,39 @@ namespace Galileo
             openLayPriceKeyDect = true;
         }
 
-        //发送价格
-        private void sendPrice(object state)
+        private int calAmbushPrice(int CapPrice)
         {
+            if (ambushPriceStr == "大小数")
+            {
+                return 0;
+            }
+            else if(ambushPriceStr == "最高价")
+            {
+                System.Console.WriteLine(intelMaxPrice);
+                //return Math.Max(CapPrice + int.Parse(ambushPriceStr), intelMaxPrice);
+                return Math.Max(CapPrice, intelMaxPrice);
+            }
+            else if (ambushPriceStr == "最高价+100")
+            {
+                System.Console.WriteLine(intelExtmPrice);
+                //return Math.Max(CapPrice + int.Parse(ambushPriceStr), intelExtmPrice);
+                return Math.Max(CapPrice, intelExtmPrice);
+            }
+            else
+            {
+                return CapPrice + int.Parse(ambushPriceStr);
+            }
+        }
+
+        //发送价格
+        private void sendPrice()
+        {
+            if (CapPrice == bdPrice)
+            {
+                Thread.Sleep((int)(commtDelay*1000));
+            }
             virtlMouClk(layPrcOkCP);
-            waitforSendPrice = false;
+            hasSendPrice = true;
         }
 
         //取消测试
@@ -836,7 +965,7 @@ namespace Galileo
                 if (e.KeyCode.ToString() == "Return")
                 {
                     openLayPriceKeyDect = false;
-                    waitforSendPrice = true;
+                    hasSendPrice = false;
                     textBox2.Text+="您已出价，请稍后...";
                     this.textBox2.AppendText("\r\n");
                 }

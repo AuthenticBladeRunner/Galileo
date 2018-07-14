@@ -65,5 +65,10 @@ namespace Galileo
                 reqLogin();
             }
         }
+
+        private void login_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            System.Environment.Exit(0);
+        }
     }
 }
