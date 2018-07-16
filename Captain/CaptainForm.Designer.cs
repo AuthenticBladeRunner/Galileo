@@ -42,22 +42,25 @@
             this.dgvMain.Location = new System.Drawing.Point(12, 12);
             this.dgvMain.Name = "dgvMain";
             this.dgvMain.RowTemplate.Height = 23;
-            this.dgvMain.Size = new System.Drawing.Size(828, 481);
+            this.dgvMain.Size = new System.Drawing.Size(838, 481);
             this.dgvMain.TabIndex = 0;
             // 
             // tbLog
             // 
+            this.tbLog.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tbLog.Location = new System.Drawing.Point(856, 12);
             this.tbLog.Multiline = true;
             this.tbLog.Name = "tbLog";
-            this.tbLog.Size = new System.Drawing.Size(167, 481);
+            this.tbLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.tbLog.Size = new System.Drawing.Size(202, 481);
             this.tbLog.TabIndex = 1;
             // 
             // CaptainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1035, 505);
+            this.ClientSize = new System.Drawing.Size(1070, 505);
             this.Controls.Add(this.tbLog);
             this.Controls.Add(this.dgvMain);
             this.Name = "CaptainForm";

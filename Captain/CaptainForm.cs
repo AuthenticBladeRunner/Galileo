@@ -254,7 +254,11 @@ namespace Captain
                             {
                                 udpCli.Send(bin, bin.Length, brdcsEp);
                             }
-                            tbLog.AppendText(DateTime.Now.ToString("[HH:mm:ss.FFF] " + fastestTime.ToString("HH:mm:ss") + ", " + fastestPrice + Environment.NewLine));
+                            tbLog.Invoke((MethodInvoker)delegate
+                            {
+                                tbLog.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff] " + fastestTime.ToString("HH:mm:ss") + ", " + fastestPrice + Environment.NewLine));
+                            }
+                            );
                         }
                         //当测试时间到时推送消息
                         int testTickIdx = Array.IndexOf(testTickArr, fastestTime);
