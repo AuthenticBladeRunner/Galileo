@@ -656,8 +656,8 @@ namespace Galileo
             Thread.Sleep(300);
             SendKeys.Flush();
 
-            textBox2.Text += timeNow.TimeOfDay.ToString() + " 测试出价：" + (lowerPrice + global.testAddPrice).ToString();
-            textBox2.AppendText("\r\n"); ;
+            textBox2.AppendText(timeNow.TimeOfDay.ToString() + " 测试出价：" + (lowerPrice + global.testAddPrice).ToString());
+            textBox2.AppendText(Environment.NewLine);
 
             //按出价
             virtlMouClk(layPrcBtnCP);
