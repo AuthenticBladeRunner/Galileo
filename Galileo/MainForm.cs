@@ -163,7 +163,7 @@ namespace Galileo
             {
                 case "IAmCaptain":          // 「我是总控」
                     captainAddr = remoteEp.Address.ToString();
-                    tbCaptain.Text = captainAddr;
+                    lbCaptain.Text = captainAddr;
                     break;
                 case "MyParam":
                     myParam = JsonConvert.DeserializeObject<Dictionary<string, object>>(msgCont);
@@ -204,6 +204,10 @@ namespace Galileo
             //设置伏击时间
             if (myParam["伏击时间"].ToString() != "")
             {
+                lbHander.Text = myParam["拍手"].ToString();
+                lbBids.Text = myParam["账号"].ToString();
+                lbPassword.Text= myParam["密码"].ToString();
+                lbID.Text= myParam["身份证"].ToString();
                 //double d = double.Parse(myParam["伏击时间"].ToString());
                 //将伏击时间由小数转换为时间格式的string
                 //ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
@@ -991,5 +995,6 @@ namespace Galileo
             e.Cancel = true;
             webBrs.Navigate(webBrs.StatusText);
         }
+
     }
 }
