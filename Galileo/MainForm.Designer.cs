@@ -36,13 +36,13 @@
             this.lbCptnAddr = new System.Windows.Forms.Label();
             this.lbCaptain = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.lbHander = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
+            this.lbBids = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label8 = new System.Windows.Forms.Label();
+            this.lbPassword = new System.Windows.Forms.Label();
+            this.lbID = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.webPanel.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -125,14 +125,13 @@
             this.label1.TabIndex = 9;
             this.label1.Text = "拍手：";
             // 
-            // label2
+            // lbHander
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(60, 27);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(41, 12);
-            this.label2.TabIndex = 10;
-            this.label2.Text = "label2";
+            this.lbHander.AutoSize = true;
+            this.lbHander.Location = new System.Drawing.Point(66, 27);
+            this.lbHander.Name = "lbHander";
+            this.lbHander.Size = new System.Drawing.Size(0, 12);
+            this.lbHander.TabIndex = 10;
             // 
             // label3
             // 
@@ -143,19 +142,18 @@
             this.label3.TabIndex = 11;
             this.label3.Text = "标书号：";
             // 
-            // label4
+            // lbBids
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(60, 53);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(41, 12);
-            this.label4.TabIndex = 12;
-            this.label4.Text = "label4";
+            this.lbBids.AutoSize = true;
+            this.lbBids.Location = new System.Drawing.Point(66, 53);
+            this.lbBids.Name = "lbBids";
+            this.lbBids.Size = new System.Drawing.Size(0, 12);
+            this.lbBids.TabIndex = 12;
             // 
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(130, 53);
+            this.label5.Location = new System.Drawing.Point(149, 53);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(41, 12);
             this.label5.TabIndex = 13;
@@ -170,33 +168,31 @@
             this.label6.TabIndex = 14;
             this.label6.Text = "身份证：";
             // 
-            // label7
+            // lbPassword
             // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(178, 53);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(41, 12);
-            this.label7.TabIndex = 15;
-            this.label7.Text = "label7";
+            this.lbPassword.AutoSize = true;
+            this.lbPassword.Location = new System.Drawing.Point(197, 53);
+            this.lbPassword.Name = "lbPassword";
+            this.lbPassword.Size = new System.Drawing.Size(0, 12);
+            this.lbPassword.TabIndex = 15;
             // 
-            // label8
+            // lbID
             // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(60, 79);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(41, 12);
-            this.label8.TabIndex = 16;
-            this.label8.Text = "label8";
+            this.lbID.AutoSize = true;
+            this.lbID.Location = new System.Drawing.Point(66, 79);
+            this.lbID.Name = "lbID";
+            this.lbID.Size = new System.Drawing.Size(0, 12);
+            this.lbID.TabIndex = 16;
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.label8);
+            this.groupBox1.Controls.Add(this.lbHander);
+            this.groupBox1.Controls.Add(this.lbID);
             this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.label7);
+            this.groupBox1.Controls.Add(this.lbPassword);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.label6);
-            this.groupBox1.Controls.Add(this.label4);
+            this.groupBox1.Controls.Add(this.lbBids);
             this.groupBox1.Controls.Add(this.label5);
             this.groupBox1.Location = new System.Drawing.Point(1015, 49);
             this.groupBox1.Name = "groupBox1";
@@ -239,13 +235,13 @@
         private System.Windows.Forms.Label lbCptnAddr;
         private System.Windows.Forms.Label lbCaptain;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label lbHander;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label lbBids;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.Label lbPassword;
+        private System.Windows.Forms.Label lbID;
         private System.Windows.Forms.GroupBox groupBox1;
     }
 }
