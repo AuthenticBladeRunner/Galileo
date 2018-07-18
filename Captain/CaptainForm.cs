@@ -291,7 +291,7 @@ namespace Captain
                 if (fastestTime >= testTickArr[testTickArr.Length - 1])
                 {
                     //最后一次测试伏击时间早于11：29：47的不执行
-                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 > '" + 0.479016203703704 + "'");
+                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 >= '11:29:45.000'");
                     //for(int i=0;i< foundRows.Length; i++)
                     //{
                     //    System.Console.WriteLine(foundRows[i]["手机号"]);

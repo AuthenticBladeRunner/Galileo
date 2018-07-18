@@ -711,7 +711,7 @@ namespace Galileo
             {
                 //设定标定价格
                 bdPrice = CapPrice + bdAddPrice - bdAddPriceAdj;
-                
+                hasSetBDPrice = true;
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("设定标定价格..." + Environment.NewLine);
@@ -742,6 +742,9 @@ namespace Galileo
             //监测是否最低可成交价大于标定价并出价
             if (hasAmbushPrice==true && CapPrice >= bdPrice && hasSendPrice == false)
             {
+                textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
                 textBox2.AppendText("标定价出价...\n\t");
                 this.Invoke((MethodInvoker)delegate ()
                 {
@@ -752,6 +755,9 @@ namespace Galileo
             //最晚提交时间出价
             if (CapTime >= latestLayTick && hasSendPrice == false)
             {
+                textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
                 textBox2.AppendText("最晚提交时间已到，现在立即出价...\n\t");
                 this.Invoke((MethodInvoker)delegate ()
                 {
@@ -762,6 +768,9 @@ namespace Galileo
             //最低可成交价大于等于出价-300就立刻出价
             if (hasAmbushPrice == true && CapPrice >= ambushPrice-300 && hasSendPrice == false)
             {
+                textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
                 textBox2.AppendText("最低可成交价已经大于等于出价-300,现在立即出价..\n\t");
                 this.Invoke((MethodInvoker)delegate ()
                 {
