@@ -173,7 +173,7 @@ namespace Captain
                     updTimeAndPrice(msgCont);
                     break;
                 case "missionComplete":
-                    setBidFlag(msgCont);
+                    setBidPrice(msgCont);
                     break;
             }
         }
@@ -218,13 +218,14 @@ namespace Captain
             }
         }
 
-        private void setBidFlag(string userId)
+        private void setBidPrice(string msg)
         {
-            DataRow[] foundRows = paramTable.Select("手机号 = '" + userId + "'");
+            var bidArr = msg.Split(';');
+            DataRow[] foundRows = paramTable.Select("手机号 = '" + bidArr[0] + "'");
             if (foundRows.Length > 0)
             {
                 DataRow row = foundRows[0];
-                row["出价"] = "是";
+                row["出价"] = bidArr[1];
             }
         }
 
@@ -422,8 +423,8 @@ namespace Captain
                                                 case CellType.Numeric:
                                                     short format = cell.CellStyle.DataFormat;
                                                     //对时间格式（2015.12.5、2015/12/5、2015-12-5等）的处理  
-                                                    if (format == 14 || format == 31 || format == 57 || format == 58)
-                                                        dataRow[j] = cell.DateCellValue;
+                                                    if (format == 14 || format == 31 || format == 57 || format == 58 || format == 177)
+                                                        dataRow[j] = cell.DateCellValue.ToString("HH:mm:ss.fff");
                                                     else
                                                         dataRow[j] = cell.NumericCellValue;
                                                     break;
