@@ -161,7 +161,7 @@ namespace Galileo
             {
                 case "IAmCaptain":          // 「我是总控」
                     captainAddr = remoteEp.Address.ToString();
-                    tbCaptain.Text = captainAddr;
+                    lbCaptain.Text = captainAddr;
                     break;
                 case "MyParam":
                     myParam = JsonConvert.DeserializeObject<Dictionary<string, object>>(msgCont);
@@ -979,5 +979,6 @@ namespace Galileo
             e.Cancel = true;
             webBrs.Navigate(webBrs.StatusText);
         }
+
     }
 }
