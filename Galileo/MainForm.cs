@@ -43,7 +43,7 @@ namespace Galileo
         int CapPrice;                                                        //总控价格
         private int testAddPrice = 700;                                      //测试加价数量
         private int lowerPrice = 0;                                          //最低可成交价
-        private int bdPrice;                                                 //标定价格
+        private int bdPrice;                                                 //标定价格 (价格阈值, 当最低价达到此价格时提交)
         private DateTime setBDPriceTick;                                     //设定标定价格时间
         private int bdAddPrice;                                              //标定价格在最低价位基础上加价多少
         private int bdAddPriceAdj=300;                                       //标定价格加价调根据经验整默认为300
@@ -229,12 +229,14 @@ namespace Galileo
             
             if (myParam["5x提交"].ToString() != "")
             {
+                string[] threArr = myParam["5x提交"].ToString().Split('+');
+
                 //设置标定价格时间
-                setBDPriceTick = Convert.ToDateTime("11:29:" + myParam["5x提交"].ToString().Split(new char[] { '+' })[0]);
+                setBDPriceTick = Convert.ToDateTime("11:29:" + threArr[0]);
                 System.Console.WriteLine("标定价格时间"+setBDPriceTick);
 
                 //设置标定价格加价多少
-                bdAddPrice = int.Parse(myParam["5x提交"].ToString().Split(new char[] { '+' })[1]);
+                bdAddPrice = int.Parse(threArr[1]);
                 System.Console.WriteLine("标定价格加价"+bdAddPrice);
             }
             else
@@ -671,8 +673,9 @@ namespace Galileo
         private void exeTimeMonitor(String msgCont)
         {
             //解析传来的时间和价格信息
-            CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
-            CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
+            string[] msgArr = msgCont.Split(';');
+            CapTime = DateTime.Parse(msgArr[0]);
+            CapPrice = int.Parse(msgArr[1]);
             //System.Console.WriteLine(CapTime);
             //System.Console.WriteLine(CapPrice);
 
