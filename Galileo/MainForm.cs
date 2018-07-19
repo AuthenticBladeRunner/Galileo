@@ -906,15 +906,16 @@ namespace Galileo
             }
             else if(ambushPriceStr == "最高价")
             {
-                System.Console.WriteLine(intelMaxPrice);
+                System.Console.WriteLine("最高价：" + intelMaxPrice);
                 //return Math.Max(CapPrice + int.Parse(ambushPriceStr), intelMaxPrice);
-                return Math.Max(CapPrice, intelMaxPrice);
+                return intelMaxPrice;
             }
             else if (ambushPriceStr == "最高价+100")
             {
-                System.Console.WriteLine(intelExtmPrice);
+                System.Console.WriteLine("最高价+100："+intelExtmPrice);
+                textBox2.AppendText("最高价+100：" + intelExtmPrice);
                 //return Math.Max(CapPrice + int.Parse(ambushPriceStr), intelExtmPrice);
-                return Math.Max(CapPrice, intelExtmPrice);
+                return intelExtmPrice;
             }
             else
             {

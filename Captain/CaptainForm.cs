@@ -35,6 +35,7 @@ namespace Captain
         // 用于给属下广播的地址
         private IPEndPoint brdcsEp = new IPEndPoint(IPAddress.Broadcast, juniorPort);
 
+        private string earlstAmbTime;                   //列表中最早伏击时间
         private DateTime fastestTime = DateTime.Today;  // 从下属拿到的最快的时间
         private int fastestPrice = 0;                   // 从下属拿到的最快的价格
         private object valueLock = new object();        // 用于在修改时间和价格时加锁
@@ -51,6 +52,7 @@ namespace Captain
             if (File.Exists(global.paramFilePath))
             {
                 ExcelToDataTable(global.paramFilePath, true);
+                earlstAmbTime=findEarlstAmbTime();                     //寻找最早伏击时间
                 tbAddTestTimeCol(paramTable, dev, testTickIntval);     //左右1秒，间隔0.1秒进行测试
                 dgvMain.DataSource = paramTable;
                 //MessageBox.Show(temp.Rows[1][1].ToString());
@@ -66,6 +68,23 @@ namespace Captain
                 //System.Environment.Exit(0);
             }
             listen();
+        }
+
+        private string findEarlstAmbTime()
+        {
+            List<string> ambTimeArr = new List<String>();
+            foreach (DataRow row in paramTable.Rows)
+            {
+                string data = row["伏击时间"].ToString(); //也可以使用row["id"] 获取这一列的值；
+                System.Console.WriteLine(data);
+                if (data == "")
+                {
+                    break;
+                }
+                ambTimeArr.Add(data);
+            }
+            ambTimeArr.Sort();
+            return ambTimeArr[0];
         }
 
         /*table加一列记录每台机器测试时的偏离值，以防止集中测试会造成风险
@@ -291,7 +310,7 @@ namespace Captain
                 if (fastestTime >= testTickArr[testTickArr.Length - 1])
                 {
                     //最后一次测试伏击时间早于11：29：47的不执行
-                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 >= '11:29:45.000'");
+                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 >= '11:29:47.000'");
                     //for(int i=0;i< foundRows.Length; i++)
                     //{
                     //    System.Console.WriteLine(foundRows[i]["手机号"]);
