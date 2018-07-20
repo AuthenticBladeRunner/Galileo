@@ -441,9 +441,10 @@ namespace Captain
                                                     dataRow[j] = "";
                                                     break;
                                                 case CellType.Numeric:
-                                                    short format = cell.CellStyle.DataFormat;
+                                                    if (DateUtil.IsCellDateFormatted(cell))
+                                                    //short format = cell.CellStyle.DataFormat;
                                                     //对时间格式（2015.12.5、2015/12/5、2015-12-5等）的处理  
-                                                    if (format == 14 || format == 31 || format == 57 || format == 58 || format == 177)
+                                                    //if (format == 14 || format == 31 || format == 57 || format == 58 || format == 177 || format == 21 || format == 166 || format == 167)
                                                         dataRow[j] = cell.DateCellValue.ToString("HH:mm:ss.fff");
                                                     else
                                                         dataRow[j] = cell.NumericCellValue;
