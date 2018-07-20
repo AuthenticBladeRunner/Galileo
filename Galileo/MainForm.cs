@@ -265,9 +265,11 @@ namespace Galileo
             if (myParam["最晚提交时间"].ToString() != "")
             {
                 latestLayTick = Convert.ToDateTime("11:29:" + myParam["最晚提交时间"].ToString().Split('.')[0]);
-                latestLayTickMill = int.Parse(myParam["最晚提交时间"].ToString().Split('.')[1]);
-
-
+                if (myParam["最晚提交时间"].ToString().Split('.').Length > 1)
+                {
+                    latestLayTickMill = int.Parse(myParam["最晚提交时间"].ToString().Split('.')[1]);
+                }
+                
                 System.Console.WriteLine("最晚提交时间: " + latestLayTick+"."+ latestLayTickMill.ToString());
                 textBox2.AppendText("最晚提交时间: " + latestLayTick + "." + latestLayTickMill.ToString() + Environment.NewLine);
             }
