@@ -748,6 +748,7 @@ namespace Galileo
             // 检测是否最低可成交价大于标定价并提交
             if (hasAmbushPrice && CapPrice >= bdPrice && !hasSendPrice && bdPrice > 0)
             {
+                hasSendPrice = true;
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
@@ -767,6 +768,7 @@ namespace Galileo
             //最晚提交时间出价
             if (CapTime >= latestLayTick && hasSendPrice == false)
             {
+                hasSendPrice = true;
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
@@ -780,6 +782,7 @@ namespace Galileo
             //最低可成交价大于等于出价-300就立刻出价
             if (hasAmbushPrice == true && CapPrice >= ambushPrice-300 && hasSendPrice == false)
             {
+                hasSendPrice = true;
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
@@ -941,7 +944,6 @@ namespace Galileo
             textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
             textBox2.AppendText("已提交" + Environment.NewLine + Environment.NewLine);
             virtlMouClk(layPrcOkCP);
-            hasSendPrice = true;
             reportSendPrice();
         }
 
