@@ -745,7 +745,13 @@ namespace Galileo
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
-                textBox2.AppendText("标定价出价...\n\t");
+                textBox2.AppendText("已达到标定价，现在提交出价..." + Environment.NewLine + Environment.NewLine);
+                System.Console.WriteLine("111111111111111"+ CapPrice);
+                System.Console.WriteLine("222222222222222"+ bdPrice);
+                if (CapPrice == bdPrice)
+                {
+                    Thread.Sleep((int)(commtDelay * 1000));
+                }
                 this.Invoke((MethodInvoker)delegate ()
                 {
                     sendPrice();
@@ -758,7 +764,7 @@ namespace Galileo
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
-                textBox2.AppendText("最晚提交时间已到，现在立即出价...\n\t");
+                textBox2.AppendText("最晚提交时间已到，现在立即提交出价..."+Environment.NewLine+Environment.NewLine);
                 this.Invoke((MethodInvoker)delegate ()
                 {
                     sendPrice();
@@ -771,7 +777,7 @@ namespace Galileo
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
-                textBox2.AppendText("最低可成交价已经大于等于出价-300,现在立即出价..\n\t");
+                textBox2.AppendText("最低可成交价已经大于等于出价-300,现在立即出价.." + Environment.NewLine + Environment.NewLine);
                 this.Invoke((MethodInvoker)delegate ()
                 {
                     sendPrice();
@@ -926,10 +932,8 @@ namespace Galileo
         // (输完验证码后的)正式提交
         private void sendPrice()
         {
-            if (CapPrice == bdPrice)
-            {
-                Thread.Sleep((int)(commtDelay*1000));
-            }
+            textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+            textBox2.AppendText("已提交"+Environment.NewLine + Environment.NewLine);
             virtlMouClk(layPrcOkCP);
             hasSendPrice = true;
             reportSendPrice();
@@ -1042,7 +1046,7 @@ namespace Galileo
                     hasAmbushPrice = true;
                     textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                     textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
-                    textBox2.AppendText("您已出价，请稍后..." + Environment.NewLine + Environment.NewLine);
+                    textBox2.AppendText("您已输入验证码，等待提交，请稍后..." + Environment.NewLine + Environment.NewLine);
                 }
             }
             
