@@ -48,9 +48,10 @@ namespace Galileo
         private int bdAddPrice;                                              //标定价格在最低价位基础上加价多少
         private int bdAddPriceAdj=300;                                       //标定价格加价调根据经验整默认为300
         private DateTime latestLayTick;                                      //最晚出价时间
+        private int latestLayTickMill=0;                                     //最晚出价时间毫秒部分
         private string ambushTime=null;                                      //伏击时间
         private DateTime ambushSecTime;                                      //伏击时间秒部分
-        private int ambushTimeMill;                                          //伏击时间毫秒部分
+        private int ambushTimeMill=0;                                        //伏击时间毫秒部分
         private string ambushPriceStr=null;                                  //伏击价格规则
         private int ambushPrice = 0;                                         //伏击价格
         private double commtDelay = 0;                                       //提交延时
@@ -215,7 +216,10 @@ namespace Galileo
                 //ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
                 ambushTime = myParam["伏击时间"].ToString();
                 ambushSecTime = DateTime.Parse(ambushTime.Substring(0, 8));
-                ambushTimeMill = int.Parse(ambushTime.Substring(9, 1));
+                if (ambushTime.Length > 8)
+                {
+                    ambushTimeMill = int.Parse(ambushTime.Substring(9, 1));
+                }
                 System.Console.WriteLine("伏击时间: " + ambushTime);
                 textBox2.AppendText("伏击时间: " + ambushTime + Environment.NewLine);
             }
@@ -260,9 +264,12 @@ namespace Galileo
             //设置最晚提交时间
             if (myParam["最晚提交时间"].ToString() != "")
             {
-                latestLayTick = Convert.ToDateTime("11:29:" + myParam["最晚提交时间"].ToString());
-                System.Console.WriteLine("最晚提交时间: " + latestLayTick);
-                textBox2.AppendText("最晚提交时间: " + latestLayTick + Environment.NewLine);
+                latestLayTick = Convert.ToDateTime("11:29:" + myParam["最晚提交时间"].ToString().Split('.')[0]);
+                latestLayTickMill = int.Parse(myParam["最晚提交时间"].ToString().Split('.')[1]);
+
+
+                System.Console.WriteLine("最晚提交时间: " + latestLayTick+"."+ latestLayTickMill.ToString());
+                textBox2.AppendText("最晚提交时间: " + latestLayTick + "." + latestLayTickMill.ToString() + Environment.NewLine);
             }
             else
             {
@@ -769,6 +776,7 @@ namespace Galileo
             if (CapTime >= latestLayTick && hasSendPrice == false)
             {
                 hasSendPrice = true;
+                Thread.Sleep((int)(latestLayTickMill * 100));
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);

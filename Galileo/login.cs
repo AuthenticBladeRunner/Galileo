@@ -21,6 +21,7 @@ namespace Galileo
 
         private void login_Load(object sender, EventArgs e)
         {
+            //MessageBox.Show("57.4".Split('.')[0]);
             mainForm.loginForm = this;
             mainForm.InitConn();
             this.tbUserName.Focus();
