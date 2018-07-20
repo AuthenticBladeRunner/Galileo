@@ -283,7 +283,7 @@ namespace Galileo
             {
                 commtDelay = double.Parse(myParam["5x提交延时"].ToString());
                 System.Console.WriteLine("5x提交延时: " + commtDelay);
-                textBox2.AppendText("5x提交延时: " + commtDelay + Environment.NewLine);
+                textBox2.AppendText("5x提交延时: " + commtDelay + Environment.NewLine + Environment.NewLine);
             }
             else
             {
@@ -716,6 +716,10 @@ namespace Galileo
                 {
                     intelExtmPrice = CapPrice + intelExtmAddPrice[maxPriceArrIdx];
                 }
+
+                textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine + Environment.NewLine);
             }
             System.Console.WriteLine("intelMaxPrice: " + intelMaxPrice);
             System.Console.WriteLine("intelExtmPrice: " + intelExtmPrice);
@@ -761,13 +765,19 @@ namespace Galileo
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
                 textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
-                textBox2.AppendText("已达到标定价，现在提交出价..." + Environment.NewLine + Environment.NewLine);
-                //System.Console.WriteLine("111111111111111"+ CapPrice);
-                //System.Console.WriteLine("222222222222222"+ bdPrice);
+                
+                //System.Console.WriteLine("11111111111111 "+ CapPrice);
+                //System.Console.WriteLine("22222222222222 "+ bdPrice);
                 if (CapPrice == bdPrice)
                 {
+                    textBox2.AppendText("已达到标定价，等待" + commtDelay + "秒后提交出价..." + Environment.NewLine + Environment.NewLine);
                     Thread.Sleep((int)(commtDelay * 1000));
                 }
+                else
+                {
+                    textBox2.AppendText("已达到标定价，立刻提交出价..." + Environment.NewLine + Environment.NewLine);
+                }
+
                 this.Invoke((MethodInvoker)delegate ()
                 {
                     sendPrice();
