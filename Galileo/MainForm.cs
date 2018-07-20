@@ -43,7 +43,7 @@ namespace Galileo
         int CapPrice;                                                        //总控价格
         private int testAddPrice = 700;                                      //测试加价数量
         private int lowerPrice = 0;                                          //最低可成交价
-        private int bdPrice;                                                 //标定价格
+        private int bdPrice;                                                 //标定价格 (价格阈值, 当最低价达到此价格时提交)
         private DateTime setBDPriceTick;                                     //设定标定价格时间
         private int bdAddPrice;                                              //标定价格在最低价位基础上加价多少
         private int bdAddPriceAdj=300;                                       //标定价格加价调根据经验整默认为300
@@ -51,9 +51,12 @@ namespace Galileo
         private string ambushTime=null;                                      //伏击时间
         private DateTime ambushSecTime;                                      //伏击时间秒部分
         private int ambushTimeMill;                                          //伏击时间毫秒部分
-        private string ambushPriceStr=null;                                  //伏击价格
+        private string ambushPriceStr=null;                                  //伏击价格规则
+        private int ambushPrice = 0;                                         //伏击价格
         private double commtDelay=0;                                         //提交延时
         private Boolean hasSetBDPrice = false;                               //是否已经设定标定价格
+        private Boolean hasInitAmbSeq = false;                               //是否已经进入伏击程序
+        private Boolean hasAmbushPrice = false;                              //是否已经伏击
         private Boolean hasSendPrice = false;                                //是否已经正式出价
         private Boolean openTestKeyDect = false;                             //开启测试打码键盘监控
         private Boolean openLayPriceKeyDect = false;                         //开启出价打码键盘监控
@@ -70,8 +73,9 @@ namespace Galileo
         private Rectangle test1 = new Rectangle(202, 430, 43, 13);
 
 
-        
-        //智能最高价及极高价的Tick时间
+        // 智能最高价: max(40s+1100元, 45s+1000元, 48s+800元, 50s+700元)
+        // 智能极高价: max(40s+1200元, 45s+1100元, 48s+800元, 50s+700元)
+        // 智能最高价及极高价的Tick时间
         private DateTime[] intelPriceTickArr = { DateTime.Parse("11:29:40"), DateTime.Parse("11:29:45"), DateTime.Parse("11:29:48"), DateTime.Parse("11:29:50")};
         private int intelMaxPrice = 0;  //智能最高价出价
         private int intelExtmPrice = 0;  //智能极高价出价
@@ -161,7 +165,7 @@ namespace Galileo
             {
                 case "IAmCaptain":          // 「我是总控」
                     captainAddr = remoteEp.Address.ToString();
-                    tbCaptain.Text = captainAddr;
+                    lbCaptain.Text = captainAddr;
                     break;
                 case "MyParam":
                     myParam = JsonConvert.DeserializeObject<Dictionary<string, object>>(msgCont);
@@ -202,12 +206,17 @@ namespace Galileo
             //设置伏击时间
             if (myParam["伏击时间"].ToString() != "")
             {
-                double d = double.Parse(myParam["伏击时间"].ToString());
+                lbHander.Text = myParam["拍手"].ToString();
+                lbBids.Text = myParam["账号"].ToString();
+                lbPassword.Text= myParam["密码"].ToString();
+                lbID.Text= myParam["身份证"].ToString();
+                //double d = double.Parse(myParam["伏击时间"].ToString());
                 //将伏击时间由小数转换为时间格式的string
-                ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
+                //ambushTime = DateTime.FromOADate(d).ToString("HH:mm:ss.f");
+                ambushTime = myParam["伏击时间"].ToString();
                 ambushSecTime = DateTime.Parse(ambushTime.Substring(0, 8));
                 ambushTimeMill = int.Parse(ambushTime.Substring(9, 1));
-                System.Console.WriteLine("伏击时间" + ambushTime);
+                System.Console.WriteLine("伏击时间: " + ambushTime);
             }
             else
             {
@@ -219,7 +228,7 @@ namespace Galileo
             if (myParam["伏击价格"].ToString() != "")
             {
                 ambushPriceStr = myParam["伏击价格"].ToString();
-                System.Console.WriteLine("伏击价格"+ ambushPriceStr);
+                System.Console.WriteLine("伏击价格: "+ ambushPriceStr);
             }
             else
             {
@@ -229,12 +238,14 @@ namespace Galileo
             
             if (myParam["5x提交"].ToString() != "")
             {
+                string[] threArr = myParam["5x提交"].ToString().Split('+');
+
                 //设置标定价格时间
-                setBDPriceTick = Convert.ToDateTime("11:29:" + myParam["5x提交"].ToString().Split(new char[] { '+' })[0]);
+                setBDPriceTick = Convert.ToDateTime("11:29:" + threArr[0]);
                 System.Console.WriteLine("标定价格时间"+setBDPriceTick);
 
                 //设置标定价格加价多少
-                bdAddPrice = int.Parse(myParam["5x提交"].ToString().Split(new char[] { '+' })[1]);
+                bdAddPrice = int.Parse(threArr[1]);
                 System.Console.WriteLine("标定价格加价"+bdAddPrice);
             }
             else
@@ -294,7 +305,7 @@ namespace Galileo
         {
             if (String.IsNullOrEmpty(captainAddr))
                 return false;
-            byte[] bin = Encoding.UTF8.GetBytes("missionComplete: " + myUserId);
+            byte[] bin = Encoding.UTF8.GetBytes("missionComplete: " + myUserId + ";" + ambushPrice);
             udpCli.Send(bin, bin.Length, captainAddr, captainPort);
             return true;
         }
@@ -671,14 +682,16 @@ namespace Galileo
         private void exeTimeMonitor(String msgCont)
         {
             //解析传来的时间和价格信息
-            CapTime = DateTime.Parse((msgCont.Split(new char[] { ';' }))[0]);
-            CapPrice = int.Parse(msgCont.Split(new char[] { ';' })[1]);
+            string[] msgArr = msgCont.Split(';');
+            CapTime = DateTime.Parse(msgArr[0]);
+            CapPrice = int.Parse(msgArr[1]);
+            int ambushPrice=1000000;
             //System.Console.WriteLine(CapTime);
             //System.Console.WriteLine(CapPrice);
 
             //监测是否要提取智能最高价
             int maxPriceArrIdx = Array.IndexOf(intelPriceTickArr, CapTime);
-            if (maxPriceArrIdx!=-1)
+            if (maxPriceArrIdx != -1)
             {
                 if (CapPrice + intelMaxAddPrice[maxPriceArrIdx] > intelMaxPrice)
                 {
@@ -688,39 +701,83 @@ namespace Galileo
                 {
                     intelExtmPrice = CapPrice + intelExtmAddPrice[maxPriceArrIdx];
                 }
-             }
-            System.Console.WriteLine("intelMaxPrice"+intelMaxPrice);
-            System.Console.WriteLine("intelExtmPrice"+intelExtmPrice);
+            }
+            System.Console.WriteLine("intelMaxPrice: " + intelMaxPrice);
+            System.Console.WriteLine("intelExtmPrice: " + intelExtmPrice);
+
 
             //监测是否到了提取标定价格的时间
-            if(CapTime == setBDPriceTick)
+            if (hasSetBDPrice == false && CapTime >= setBDPriceTick)
             {
                 //设定标定价格
-                bdPrice = CapPrice+bdAddPrice-bdAddPriceAdj;   
-                this.textBox2.Text += CapTime.ToString() + " 设标价时的最低价格:" + CapPrice;
-                textBox2.AppendText("\r\n");
-                this.textBox2.Text += timeNow.TimeOfDay.ToString()+" 标定价格:" +bdPrice;
-                textBox2.AppendText("\r\n");
+                bdPrice = CapPrice + bdAddPrice - bdAddPriceAdj;
+                hasSetBDPrice = true;
+                textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                textBox2.AppendText("设定标定价格..." + Environment.NewLine);
+                textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
+                textBox2.AppendText("标定价格设为: " + bdPrice + Environment.NewLine + Environment.NewLine);
             }
 
             //监测是否到了伏击时间
-            if (CapTime == ambushSecTime)
+            if (CapTime >= ambushSecTime && hasAmbushPrice==false && hasInitAmbSeq==false)
             {
                 //Thread threadGetData = new Thread(new ThreadStart(callGUItoLayPrice, CapPrice));
                 //threadGetData.Start();
                 //textBox1.Text += bdPrice;
 
                 // The "invoke" call tells the form "Please execute this code in your thread rather than mine."
-                Thread.Sleep(ambushTimeMill*100);
+                hasInitAmbSeq = true;
+                //如果时间没有遗漏，则进行伏击延时
+                if (CapTime == ambushSecTime)
+                {
+                    Thread.Sleep(ambushTimeMill * 100);
+                }
                 this.Invoke((MethodInvoker)delegate ()
                 {
-                    layPrice();
+                    ambushPrice=layPrice();
                 });
             }
 
-            //监测是否标定价大于最低可成交价并出价
-            if (CapPrice >= bdPrice && hasSendPrice == false)
+            //监测是否最低可成交价大于标定价并出价
+            if (hasAmbushPrice==true && CapPrice >= bdPrice && hasSendPrice == false)
             {
+                textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
+                textBox2.AppendText("已达到标定价，现在提交出价..." + Environment.NewLine + Environment.NewLine);
+                System.Console.WriteLine("111111111111111"+ CapPrice);
+                System.Console.WriteLine("222222222222222"+ bdPrice);
+                if (CapPrice == bdPrice)
+                {
+                    Thread.Sleep((int)(commtDelay * 1000));
+                }
+                this.Invoke((MethodInvoker)delegate ()
+                {
+                    sendPrice();
+                });
+            }
+
+            //最晚提交时间出价
+            if (CapTime >= latestLayTick && hasSendPrice == false)
+            {
+                textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
+                textBox2.AppendText("最晚提交时间已到，现在立即提交出价..."+Environment.NewLine+Environment.NewLine);
+                this.Invoke((MethodInvoker)delegate ()
+                {
+                    sendPrice();
+                });
+            }
+
+            //最低可成交价大于等于出价-300就立刻出价
+            if (hasAmbushPrice == true && CapPrice >= ambushPrice-300 && hasSendPrice == false)
+            {
+                textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                textBox2.AppendText("当前最低价格: " + CapPrice + Environment.NewLine);
+                textBox2.AppendText("最低可成交价已经大于等于出价-300,现在立即出价.." + Environment.NewLine + Environment.NewLine);
                 this.Invoke((MethodInvoker)delegate ()
                 {
                     sendPrice();
@@ -802,13 +859,15 @@ namespace Galileo
             SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
             */
             SendKeys.SendWait((CapPrice + testAddPrice).ToString());
-            textBox2.Text += "现在验证码测试...";
-            this.textBox2.AppendText("\r\n");
+
+            textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+            textBox2.AppendText("现在验证码测试..." + Environment.NewLine);
+
             Thread.Sleep(300);
             SendKeys.Flush();
 
-            textBox2.Text += CapTime.ToString() + " 测试出价：" + (CapPrice + testAddPrice).ToString();
-            textBox2.AppendText("\r\n"); ;
+            textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+            textBox2.AppendText("测试出价: " + (CapPrice + testAddPrice).ToString() + Environment.NewLine + Environment.NewLine);
 
             //按出价
             virtlMouClk(layPrcBtnCP);
@@ -816,8 +875,8 @@ namespace Galileo
             openTestKeyDect = true;
         }
 
-        //正式出价
-        private void layPrice()
+        //伏击出价
+        private int layPrice()
         {
             //按出价输入框
             virtlMouClk(layPrcInptBoxCP);
@@ -825,14 +884,15 @@ namespace Galileo
             SendKeys.Send  异步模拟按键(不阻塞UI)
             SendKeys.SendWait  同步模拟按键(会阻塞UI直到对方处理完消息后返回)
             */
-            int ambushPrice = calAmbushPrice(CapPrice);
+            ambushPrice = calAmbushPrice(CapPrice);
             SendKeys.SendWait(ambushPrice.ToString());
-            textBox2.Text += "现在正式出价...";
-            this.textBox2.AppendText("\r\n");
-            textBox2.Text += CapTime.ToString() + " 正式出价时最低价：" + CapPrice.ToString();
-            this.textBox2.AppendText("\r\n");
-            textBox2.Text += CapTime.ToString() + " 正式出价：" + ambushPrice.ToString();
-            this.textBox2.AppendText("\r\n");
+
+            textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+            textBox2.AppendText("现在正式出价..." + Environment.NewLine);
+            textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+            textBox2.AppendText("当前最低价: " + CapPrice + Environment.NewLine);
+            textBox2.AppendText("正式出价价格: " + ambushPrice + Environment.NewLine + Environment.NewLine);
+
             Thread.Sleep(300);
             SendKeys.Flush();
 
@@ -841,6 +901,7 @@ namespace Galileo
             openTestKeyDect = false;
             //开启键盘监控
             openLayPriceKeyDect = true;
+            return ambushPrice;
         }
 
         private int calAmbushPrice(int CapPrice)
@@ -851,15 +912,16 @@ namespace Galileo
             }
             else if(ambushPriceStr == "最高价")
             {
-                System.Console.WriteLine(intelMaxPrice);
+                System.Console.WriteLine("最高价：" + intelMaxPrice);
                 //return Math.Max(CapPrice + int.Parse(ambushPriceStr), intelMaxPrice);
-                return Math.Max(CapPrice, intelMaxPrice);
+                return intelMaxPrice;
             }
             else if (ambushPriceStr == "最高价+100")
             {
-                System.Console.WriteLine(intelExtmPrice);
+                System.Console.WriteLine("最高价+100："+intelExtmPrice);
+                textBox2.AppendText("最高价+100：" + intelExtmPrice);
                 //return Math.Max(CapPrice + int.Parse(ambushPriceStr), intelExtmPrice);
-                return Math.Max(CapPrice, intelExtmPrice);
+                return intelExtmPrice;
             }
             else
             {
@@ -867,13 +929,11 @@ namespace Galileo
             }
         }
 
-        //发送价格
+        // (输完验证码后的)正式提交
         private void sendPrice()
         {
-            if (CapPrice == bdPrice)
-            {
-                Thread.Sleep((int)(commtDelay*1000));
-            }
+            textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+            textBox2.AppendText("已提交"+Environment.NewLine + Environment.NewLine);
             virtlMouClk(layPrcOkCP);
             hasSendPrice = true;
             reportSendPrice();
@@ -945,7 +1005,23 @@ namespace Galileo
 
         private void btnCheckPos_Click(object sender, EventArgs e)
         {
-            CaptureImg("7.jpg", "xxx.png", test1);
+            Bitmap bm = new Bitmap(webBrs.Width, webBrs.Height);
+            Graphics g = Graphics.FromImage(bm);
+            IntPtr hdc = g.GetHdc();
+
+            // Print WebBrowser snapshot to hdc
+            bool result = PrintWindow(webBrs.Handle, hdc, 0);
+
+            g.ReleaseHdc(hdc);
+            g.Flush();
+
+
+            // Save the bitmap, if successful
+            if (result == true)
+                bm.Save("reflash.png");
+            bm.Dispose();
+            g.Dispose();
+            //CaptureImg("7.jpg", "xxx.png", test1);
         }
 
         private void webBrs_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
@@ -967,8 +1043,10 @@ namespace Galileo
                 {
                     openLayPriceKeyDect = false;
                     hasSendPrice = false;
-                    textBox2.Text+="您已出价，请稍后...";
-                    this.textBox2.AppendText("\r\n");
+                    hasAmbushPrice = true;
+                    textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
+                    textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
+                    textBox2.AppendText("您已输入验证码，等待提交，请稍后..." + Environment.NewLine + Environment.NewLine);
                 }
             }
             
@@ -979,5 +1057,6 @@ namespace Galileo
             e.Cancel = true;
             webBrs.Navigate(webBrs.StatusText);
         }
+
     }
 }

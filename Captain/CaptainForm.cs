@@ -36,6 +36,7 @@ namespace Captain
         // 用于给属下广播的地址
         private IPEndPoint brdcsEp = new IPEndPoint(IPAddress.Broadcast, juniorPort);
 
+        private string earlstAmbTime;                   //列表中最早伏击时间
         private DateTime fastestTime = DateTime.Today;  // 从下属拿到的最快的时间
         private int fastestPrice = 0;                   // 从下属拿到的最快的价格
         private object valueLock = new object();        // 用于在修改时间和价格时加锁
@@ -52,6 +53,7 @@ namespace Captain
             if (File.Exists(global.paramFilePath))
             {
                 ExcelToDataTable(global.paramFilePath, true);
+                earlstAmbTime=findEarlstAmbTime();                     //寻找最早伏击时间
                 tbAddTestTimeCol(paramTable, dev, testTickIntval);     //左右1秒，间隔0.1秒进行测试
                 dgvMain.DataSource = paramTable;
                 //MessageBox.Show(temp.Rows[1][1].ToString());
@@ -67,6 +69,23 @@ namespace Captain
                 //System.Environment.Exit(0);
             }
             listen();
+        }
+
+        private string findEarlstAmbTime()
+        {
+            List<string> ambTimeArr = new List<String>();
+            foreach (DataRow row in paramTable.Rows)
+            {
+                string data = row["伏击时间"].ToString(); //也可以使用row["id"] 获取这一列的值；
+                System.Console.WriteLine(data);
+                if (data == "")
+                {
+                    break;
+                }
+                ambTimeArr.Add(data);
+            }
+            ambTimeArr.Sort();
+            return ambTimeArr[0];
         }
 
         /*table加一列记录每台机器测试时的偏离值，以防止集中测试会造成风险
@@ -174,7 +193,7 @@ namespace Captain
                     updTimeAndPrice(msgCont);
                     break;
                 case "missionComplete":
-                    setBidFlag(msgCont);
+                    setBidPrice(msgCont);
                     break;
             }
         }
@@ -219,13 +238,14 @@ namespace Captain
             }
         }
 
-        private void setBidFlag(string userId)
+        private void setBidPrice(string msg)
         {
-            DataRow[] foundRows = paramTable.Select("手机号 = '" + userId + "'");
+            var bidArr = msg.Split(';');
+            DataRow[] foundRows = paramTable.Select("手机号 = '" + bidArr[0] + "'");
             if (foundRows.Length > 0)
             {
                 DataRow row = foundRows[0];
-                row["出价"] = "是";
+                row["出价"] = bidArr[1];
             }
         }
 
@@ -255,6 +275,11 @@ namespace Captain
                             {
                                 udpCli.Send(bin, bin.Length, brdcsEp);
                             }
+                            tbLog.Invoke((MethodInvoker)delegate
+                            {
+                                tbLog.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff] " + fastestTime.ToString("HH:mm:ss") + ", " + fastestPrice + Environment.NewLine));
+                            }
+                            );
                         }
                         //当测试时间到时推送消息
                         int testTickIdx = Array.IndexOf(testTickArr, fastestTime);
@@ -286,7 +311,7 @@ namespace Captain
                 if (fastestTime >= testTickArr[testTickArr.Length - 1])
                 {
                     //最后一次测试伏击时间早于11：29：47的不执行
-                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 > '" + 0.479016203703704 + "'");
+                    foundRows = paramTable.Select("测试顺序 = '" + sendSeq + "' and 伏击时间 >= '11:29:47.000'");
                     //for(int i=0;i< foundRows.Length; i++)
                     //{
                     //    System.Console.WriteLine(foundRows[i]["手机号"]);
@@ -418,8 +443,8 @@ namespace Captain
                                                 case CellType.Numeric:
                                                     short format = cell.CellStyle.DataFormat;
                                                     //对时间格式（2015.12.5、2015/12/5、2015-12-5等）的处理  
-                                                    if (format == 14 || format == 31 || format == 57 || format == 58)
-                                                        dataRow[j] = cell.DateCellValue;
+                                                    if (format == 14 || format == 31 || format == 57 || format == 58 || format == 177)
+                                                        dataRow[j] = cell.DateCellValue.ToString("HH:mm:ss.fff");
                                                     else
                                                         dataRow[j] = cell.NumericCellValue;
                                                     break;
