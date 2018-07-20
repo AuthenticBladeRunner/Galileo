@@ -43,7 +43,7 @@ namespace Galileo
         int CapPrice;                                                        //总控价格
         private int testAddPrice = 700;                                      //测试加价数量
         private int lowerPrice = 0;                                          //最低可成交价
-        private int bdPrice;                                                 //标定价格 (价格阈值, 当最低价达到此价格时提交)
+        private int bdPrice = 0;                                             //标定价格 (价格阈值, 当最低价达到此价格时提交)
         private DateTime setBDPriceTick;                                     //设定标定价格时间
         private int bdAddPrice;                                              //标定价格在最低价位基础上加价多少
         private int bdAddPriceAdj=300;                                       //标定价格加价调根据经验整默认为300
@@ -725,7 +725,7 @@ namespace Galileo
                 textBox2.AppendText("标定价格设为: " + bdPrice + Environment.NewLine + Environment.NewLine);
             }
 
-            //监测是否到了伏击时间
+            // 检测是否到了伏击时间
             if (CapTime >= ambushSecTime && hasAmbushPrice==false && hasInitAmbSeq==false)
             {
                 //Thread threadGetData = new Thread(new ThreadStart(callGUItoLayPrice, CapPrice));
@@ -745,8 +745,8 @@ namespace Galileo
                 });
             }
 
-            //监测是否最低可成交价大于标定价并出价
-            if (hasAmbushPrice==true && CapPrice >= bdPrice && hasSendPrice == false)
+            // 检测是否最低可成交价大于标定价并提交
+            if (hasAmbushPrice && CapPrice >= bdPrice && !hasSendPrice && bdPrice > 0)
             {
                 textBox2.AppendText(DateTime.Now.ToString("[HH:mm:ss.fff]") + Environment.NewLine);
                 textBox2.AppendText("国拍网时间: " + CapTime.ToString("HH:mm:ss") + Environment.NewLine);
