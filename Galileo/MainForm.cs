@@ -932,6 +932,7 @@ namespace Galileo
             else if(ambushPriceStr == "最高价")
             {
                 System.Console.WriteLine("最高价：" + intelMaxPrice);
+                textBox2.AppendText("最高价：" + intelMaxPrice + Environment.NewLine);
                 //return Math.Max(CapPrice + int.Parse(ambushPriceStr), intelMaxPrice);
                 return intelMaxPrice;
             }
